@@ -10,7 +10,6 @@ import os
 import pandas as pd
 from scipy import spatial
 
-
 __author__     =['Victor Calderon']
 __copyright__  =["Copyright 2016 Victor Calderon, Index function"]
 __email__      =['victor.calderon@vanderbilt.edu']

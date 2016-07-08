@@ -111,6 +111,11 @@ def plot_calcs(mass,bins,dlogM,mass_err=False,ratio_err=False):
     ----------
     mass: array-like
         A 1D array with mass values
+    bins: array=like
+        A 1D array with the values which will be used as the bin edges
+        by the histogram function
+    dlogM: float-like
+        The log difference between bin edges
     
     Optional
     --------
@@ -195,7 +200,9 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
         An array with mass values in at index 0 (when transformed) and distance to the Nth 
         nearest neighbor in the others
         Example: 6239 by 7
-            Has mass values and distances to 6 Nth nearest neighbors       
+            Has mass values and distances to 6 Nth nearest neighbors  
+    bins: array=like
+        A 1D array with the values which will be used as the bin edges     
     kk: integer-like
         The index of mass_dist (transformed) where the appropriate distance array may be found
 
@@ -221,10 +228,7 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
 
     bin_nums     = np.unique(digitized)
     bin_nums     = list(bin_nums)
-#necessary measure, as not all catalogs have galaxies in the last bin
-#if this occurs, no median will be returned for the 12th bin, and an
-#error will be thrown when trying to plot, as it will not have the 
-#same dimensions as bin_centers
+
     if 14 in bin_nums:
         bin_nums.remove(14)
         bin_nums = np.array(bin_nums)
@@ -498,6 +502,7 @@ def plot_bands(bin_centers,upper,lower,ax):
 
 dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density\Catalogs\RESOLVE_ECO\Resolve_plk_5001_so_mvir_hod1_ECO_Mocks"
 usecols  = (0,1,8,13)
+
 bins  = np.linspace(9.1,11.9,15)
 dlogM = (11.9-9.1)/14
 
@@ -625,7 +630,6 @@ eco_dens = ([calc_dens(neigh_vals[jj],\
 eco_mass_dens = [(np.column_stack((mass_eco,eco_dens[ii]))) for ii in range(len(neigh_vals))]
 eco_idx  = [(eco_mass_dens[jj].T[1].argsort()) for jj in range(len(neigh_vals))]
 eco_mass_dat  = [(eco_mass_dens[jj][eco_idx[jj]].T[0]) for jj in range(len(neigh_vals))]
-#eco_mass_dat should be the same length as neigh_vals
 
 eco_ratio_info    = [[] for xx in xrange(len(eco_mass_dat))]
 
@@ -704,7 +708,7 @@ while zz <= 16:
             for jj in range(len(nn_mass_dist)):
                 upper = A['{0}_{1}'.format(neigh_vals[ii],frac_vals[hh])][0]
                 lower  = A['{0}_{1}'.format(neigh_vals[ii],frac_vals[hh])][1]
-                plot_bands(bin_centers,upper,lower,axes_flat[zz])
+                plot_bands(bin_centers,upper,lower,axes_flat[zz] )
                 plot_all_rats(bin_centers,(plot_frac_arr[ii][hh][jj]),\
                               neigh_vals[ii],axes_flat[zz],hh,zz)
             plot_eco_rats(bin_centers,(eco_ratio_info[ii]),neigh_vals[ii],axes_flat[zz],hh,zz)

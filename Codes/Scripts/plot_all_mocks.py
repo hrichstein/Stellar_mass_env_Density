@@ -1252,14 +1252,23 @@ plt.show()
 
 ###############################################################################
 
-def param_finder(hist_counts,bin_centers,hist_err):
+def param_finder(hist_counts,bin_centers):
     """
+    Parameters
+    ----------
+    hist-counts: array-like
+        An array with stellar mass function values which will be used in the 
+        Schechter function parameterization
+    bin_centers: array-like
+        An array with the same number of values as hist_counts; used as
+        independent variable in Schechter function
+
     Returns
     -------
     opt_v: array-like
         Array with three values: phi_star, alpha, and M_star
     res_arr: array-like
-        Array with two values: alpha and M_star
+        Array with two values: alpha and log_M_star
 
 
     """
@@ -1276,7 +1285,7 @@ def param_finder(hist_counts,bin_centers,hist_err):
 ###############################################################################
 ###Test that param_finder is working
 
-opt_v,test_arr = param_finder(eco_low[1][2],bin_centers,eco_low[1]['low_err'][0])
+opt_v,test_arr = param_finder(eco_low[1][2],bin_centers)
 schech_vals   = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
                     opt_v[2])
 
@@ -1299,9 +1308,9 @@ for dd in neigh_vals:
         param_dict_low[dd][ee]  = {}
         param_dict_high[dd][ee] = {}
         opt_v, param_dict_low[dd][ee] = param_finder(eco_low[dd][ee],\
-            bin_centers,eco_low[dd]['low_err'][coln_dict[ee]])
+            bin_centers)
         opt_v, param_dict_high[dd][ee] = param_finder(eco_high[dd][ee],\
-            bin_centers,eco_high[dd]['high_err'][coln_dict[ee]])
+            bin_centers)
 
 over_alpha_dict = {}
 over_log_m_star = {}
@@ -1332,7 +1341,7 @@ for jj in neigh_vals:
     ax.plot(perc_arr,over_log_m_star[jj],marker='o',label='{0}'.format(jj),linestyle='--')
 ax.set_xlim([0,100])
 ax.legend(loc='best', numpoints=1)
-ax.set_xlabel('Percentage')
+ax.set_xlabel('Percentile')
 ax.set_ylabel(r'$\log\ M_{*}$')
 plt.show()
 
@@ -1342,7 +1351,7 @@ for jj in neigh_vals:
     ax.plot(perc_arr,over_alpha_dict[jj],marker='o',label='{0}'.format(jj),linestyle='--')
 ax.set_xlim([0,100])
 ax.legend(loc='best', numpoints=1)
-ax.set_xlabel('Percentage')
+ax.set_xlabel('Percentile')
 ax.set_ylabel(r'$\alpha$')
 plt.show()
 

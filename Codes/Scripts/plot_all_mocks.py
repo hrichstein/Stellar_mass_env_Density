@@ -1329,7 +1329,7 @@ perc_arr = (10,25,49,51,75,90)
 
 fig,ax = plt.subplots()
 for jj in neigh_vals:
-    ax.plot(perc_arr,over_alpha_dict[jj],marker='o',label='{0}'.format(jj),linestyle='--')
+    ax.plot(perc_arr,over_log_m_star[jj],marker='o',label='{0}'.format(jj),linestyle='--')
 ax.set_xlim([0,100])
 ax.legend(loc='best', numpoints=1)
 ax.set_xlabel('Percentage')
@@ -1337,7 +1337,80 @@ ax.set_ylabel(r'$\log\ M_{*}$')
 plt.show()
 
 
+fig,ax = plt.subplots()
+for jj in neigh_vals:
+    ax.plot(perc_arr,over_alpha_dict[jj],marker='o',label='{0}'.format(jj),linestyle='--')
+ax.set_xlim([0,100])
+ax.legend(loc='best', numpoints=1)
+ax.set_xlabel('Percentage')
+ax.set_ylabel(r'$\alpha$')
+plt.show()
+
+
 ###############################################################################
+
+diff_dict_m_star = {}
+diff_dict_alpha = {}
+
+for dd in neigh_vals:
+    diff_dict_m_star[dd] = {}
+    diff_dict_alpha[dd] = {}
+    for jj in frac_vals:
+        temp_list_diff_m_star = []
+        temp_list_diff_alpha = []
+        diff_dict_alpha[dd][jj] = {}
+        diff_dict_m_star[dd][jj] = {}
+        temp_list_diff_m_star.append((param_dict_high[dd][jj][1] - \
+            param_dict_low[dd][jj][1]))
+        temp_list_diff_alpha.append((param_dict_high[dd][jj][0] - \
+            param_dict_low[dd][jj][0]))
+        diff_dict_alpha[dd][jj]  = np.array(temp_list_diff_alpha)
+        diff_dict_m_star[dd][jj] = np.array(temp_list_diff_m_star)
+
+dict_revamp_mstar = {}
+for dd in neigh_vals:
+    dict_revamp_mstar[dd] = []
+    for jj in frac_vals:
+        dict_revamp_mstar[dd].append(diff_dict_m_star[dd][jj])
+
+dict_revamp_alpha = {}
+for dd in neigh_vals:
+    dict_revamp_alpha[dd] = []
+    for jj in frac_vals:
+        dict_revamp_alpha[dd].append(diff_dict_alpha[dd][jj])
+
+
+discrete_x = np.array([1,2,3])
+
+fig,ax = plt.subplots()
+
+for ii in neigh_vals:
+    ax.plot(discrete_x,dict_revamp_mstar[ii],marker='o',\
+        linestyle = '--',label='{0}'.format(ii))
+ax.set_xlim(0,4)        
+ax.set_xlabel('Fractional Cut')
+ax.set_xticks([1,2,3])
+ax.set_ylabel('Difference in $\log\ M_{*}$')
+ax.legend(loc='best',numpoints=1)
+plt.show()
+
+######
+
+fig,ax = plt.subplots()
+
+for ii in neigh_vals:
+    ax.plot(discrete_x,dict_revamp_alpha[ii],marker='o',\
+        linestyle = '--',label='{0}'.format(ii))
+ax.set_xlim(0,4)        
+ax.set_xlabel('Fractional Cut')
+ax.set_xticks([1,2,3])
+ax.set_ylabel(r'Difference in $\alpha$')
+ax.legend(loc='best',numpoints=1)
+plt.show()
+
+
+#50/50,25/75,10/90
+
 ###############################################################################
 ###############################################################################
 ###############################################################################

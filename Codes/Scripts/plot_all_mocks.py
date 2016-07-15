@@ -690,7 +690,7 @@ def plot_med_range(bin_centers,low_lim,up_lim,ax,alpha,color='gray'):
 ##############################################################################
 ##############################################################################
 
-dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density\Catalogs\RESOLVE_ECO\Resolve_plk_5001_so_mvir_hod1_ECO_Mocks"
+dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density\Catalogs\Resolve_plk_5001_so_mvir_hod1_Hannah_newdens_ECO_Mocks\Resolve_plk_5001_so_mvir_hod1_Hannah_newdens_ECO_Mocks"
 usecols  = (0,1,8,13)
 
 bins  = np.linspace(9.1,11.9,15)
@@ -1018,6 +1018,10 @@ while zz <=4:
         for vv in range(len(nn_mass_dist)):
                 lower_m  = B['{0}'.format(ii)][0]
                 upper_m  = B['{0}'.format(ii)][1]
+                plot_med_range(bin_centers,top_95[ii][vv],low_95[ii][vv],\
+                    axes_flat[zz],0.05,color='lightsteelblue')
+                plot_med_range(bin_centers,top_68[ii][vv],low_68[ii][vv],\
+                    axes_flat[zz],0.15,color='gainsboro')
                 plot_bands(bin_centers,upper_m,lower_m,axes_flat[zz])
                 plot_all_meds(bin_centers,med_plot_arr[ii][vv],axes_flat[zz],zz)
                 plot_eco_meds(bin_centers,eco_medians[ii][0],\
@@ -1213,7 +1217,8 @@ for ii in range(len(mass_freq)+1):
     ax.set_yticks([10**-2,10**-1,10**0])
     ax.plot(bin_centers,schech_vals,label='Schechter',color='silver')
     if ii == 8:
-        ax.errorbar(bin_centers,ydata,yerr=eco_freq[1],color='deeppink',label='ECO')
+        ax.errorbar(bin_centers,ydata,yerr=eco_freq[1],color='deeppink',\
+            label='ECO')
     else:
         ax.plot(bin_centers,ydata,label='Mock',color='darkorchid')
     if ii == 0 or ii == 8:
@@ -1228,6 +1233,149 @@ plt.show()
 
 ###############################################################################
 
+eco_low  = {}
+eco_high = {}
+for jj in range(len(neigh_vals)):
+    eco_low[neigh_vals[jj]]  = {}
+    eco_high[neigh_vals[jj]] = {}
+    eco_low[neigh_vals[jj]], eco_high[neigh_vals[jj]] = hist_calcs\
+    (eco_mass_dat[jj],bins,dlogM,eco=True)
 
 
+###############################################################################
+
+fig,ax = plt.subplots()
+
+ax.set_yscale('log')
+ax.plot(bin_centers,eco_low[1][2])
+plt.show()
+
+###############################################################################
+
+def param_finder(hist_counts,bin_centers,hist_err):
+    """
+    Returns
+    -------
+    opt_v: array-like
+        Array with three values: phi_star, alpha, and M_star
+    res_arr: array-like
+        Array with two values: alpha and M_star
+
+
+    """
+    xdata = 10**bin_centers
+    p0    = (1,-1.05,10**10.64)
+    opt_v,est_cov = optimize.curve_fit(schechter_log_func,xdata,\
+                            hist_counts,p0=p0)
+    alpha   = opt_v[1]
+    log_m_star  = np.log10(opt_v[2])
+    res_arr = np.array([alpha,log_m_star])
+
+    return opt_v, res_arr
+
+###############################################################################
+###Test that param_finder is working
+
+opt_v,test_arr = param_finder(eco_low[1][2],bin_centers,eco_low[1]['low_err'][0])
+schech_vals   = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
+                    opt_v[2])
+
+fig,ax = plt.subplots()
+
+ax.set_yscale('log')
+ax.plot(bin_centers,eco_low[1][2])
+ax.plot(bin_centers,schech_vals)
+plt.show()
+
+###############################################################################
+param_dict_low  = {}
+param_dict_high = {}
+
+
+for dd in neigh_vals:
+    param_dict_low[dd]  = {}
+    param_dict_high[dd] = {}
+    for ee in frac_vals:
+        param_dict_low[dd][ee]  = {}
+        param_dict_high[dd][ee] = {}
+        opt_v, param_dict_low[dd][ee] = param_finder(eco_low[dd][ee],\
+            bin_centers,eco_low[dd]['low_err'][coln_dict[ee]])
+        opt_v, param_dict_high[dd][ee] = param_finder(eco_high[dd][ee],\
+            bin_centers,eco_high[dd]['high_err'][coln_dict[ee]])
+
+over_alpha_dict = {}
+over_log_m_star = {}
+for dd in neigh_vals:
+    temp_list_alpha = []
+    temp_list_logMstar = []
+    over_alpha_dict[dd] = {}
+    over_log_m_star[dd] = {}
+
+    low_idx  = np.array(list(reversed(np.sort(param_dict_low[dd].keys()))))
+    high_idx = np.sort(param_dict_high[dd].keys())
+
+    for ff in range(len(low_idx)):
+        temp_list_alpha.append(param_dict_low[dd][low_idx[ff]][0])
+        temp_list_logMstar.append(param_dict_low[dd][low_idx[ff]][1])
+    for ff in range(len(high_idx)):
+        temp_list_alpha.append(param_dict_high[dd][high_idx[ff]][0])
+        temp_list_logMstar.append(param_dict_low[dd][low_idx[ff]][1])
+    over_alpha_dict[dd] = temp_list_alpha
+    over_log_m_star[dd] = temp_list_logMstar
+
+#10,25,low_50,high_50,75,90
+perc_arr = (10,25,49,51,75,90)
+
+
+fig,ax = plt.subplots()
+for jj in neigh_vals:
+    ax.plot(perc_arr,over_alpha_dict[jj],marker='o',label='{0}'.format(jj),linestyle='--')
+ax.set_xlim([0,100])
+ax.legend(loc='best', numpoints=1)
+ax.set_xlabel('Percentage')
+ax.set_ylabel(r'$\log\ M_{*}$')
+plt.show()
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
 ###############################################################################

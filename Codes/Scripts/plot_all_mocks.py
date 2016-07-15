@@ -8,7 +8,7 @@ from matplotlib.ticker import FormatStrFormatter
 import numpy as np 
 import os
 import pandas as pd
-from scipy import spatial
+from scipy import optimize,spatial
 
 #########################################################################
 
@@ -110,7 +110,7 @@ def plot_calcs(mass,bins,dlogM,mass_err=False,ratio_err=False):
     Parameters
     ----------
     mass: array-like
-        A 1D array with mass values
+        A 1D array with mass values, assumed to be in order
     bins: array=like
         A 1D array with the values which will be used as the bin edges
         by the histogram function
@@ -172,7 +172,8 @@ def plot_calcs(mass,bins,dlogM,mass_err=False,ratio_err=False):
         ratio_dict[ii] = ratio_counts
 
         if ratio_err == True:
-            yerr.append((counts_2*1.)/(counts*1.)*np.sqrt(1./counts + 1./counts_2))
+            yerr.append((counts_2*1.)/(counts*1.)*\
+                np.sqrt(1./counts + 1./counts_2))
 
     if mass_err == True:
         mass_freq_list     = [[] for xx in xrange(2)]
@@ -233,20 +234,22 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
         bin_nums.remove(14)
         bin_nums = np.array(bin_nums)
     
-    medians  = np.array([np.median(mass_dist.T[kk][digitized==ii]) for ii in bin_nums])
+    medians  = np.array([np.median(mass_dist.T[kk][digitized==ii]) \
+                for ii in bin_nums])
 
     if bootstrap == True:
-        dist_in_bin    = np.array([(mass_dist.T[kk][digitized==ii]) for ii in bin_nums])
+        dist_in_bin    = np.array([(mass_dist.T[kk][digitized==ii]) \
+                for ii in bin_nums])
         for vv in range(len(dist_in_bin)):
             if len(dist_in_bin[vv]) == 0:
                 dist_in_bin_list = list(dist_in_bin[vv])
                 dist_in_bin[vv] = np.zeros(len(dist_in_bin[0]))
         low_err_test   = np.array([np.percentile(astropy.stats.bootstrap\
-                        (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),16) for vv\
-                                     in range(len(dist_in_bin))])
+                        (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),16) \
+                        for vv in range(len(dist_in_bin))])
         high_err_test  = np.array([np.percentile(astropy.stats.bootstrap\
-                        (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),84) for vv\
-                                     in range(len(dist_in_bin))])
+                        (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),84) \
+                        for vv in range(len(dist_in_bin))])
 
         med_list    = [[] for yy in range(len(frac_vals))]
         med_list[0] = medians
@@ -256,6 +259,73 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
 
     return medians    
 
+#####################################################################################
+def hist_calcs(mass,bins,dlogM,eco=False):
+    """
+    Returns dictionaries with the counts for the upper
+        and lower density portions; calculates the 
+        three different percentile cuts for each mass
+        array given
+    
+    Parameters
+    ----------
+    mass: array-like
+        A 1D array with log stellar mass values, assumed
+        to be an order which corresponds to the ascending 
+        densities; (necessary, as the index cuts are based 
+        on this)
+    bins: array-like
+        A 1D array with the values which will be used as the bin edges   
+    dlogM: float-like
+        The log difference between bin edges
+        
+    Returns
+    -------
+    hist_dict_low: dictionary-like
+        A dictionary with three keys (the frac vals), with arrays
+        as values. The values for the lower density cut
+    hist_dict_high: dictionary like
+        A dictionary with three keys (the frac vals), with arrays
+        as values. The values for the higher density cut
+    """
+    hist_dict_low  = {}
+    hist_dict_high = {}
+    frac_val  = np.array([2,4,10])
+    frac_dict = {2:0,4:1,10:2}
+    
+    if eco == True:
+        low_err   = [[] for xx in xrange(len(frac_val))]
+        high_err  = [[] for xx in xrange(len(frac_val))]
+    
+    for ii in frac_val:
+        hist_dict_low[ii]  = {}
+        hist_dict_high[ii] = {}
+    
+        frac_data     = int(len(mass)/ii)
+        
+        frac_mass     = mass[0:frac_data]
+        counts, edges = np.histogram(frac_mass,bins)
+        low_counts    = (counts/float(len(frac_mass))/dlogM)
+        
+        if eco == True:
+            low_err[frac_dict[ii]]    = np.sqrt(counts)/len(frac_mass)/dlogM
+        
+        hist_dict_low[ii]  = low_counts
+
+        frac_mass_2        = mass[-frac_data:]
+        counts_2, edges_2  = np.histogram(frac_mass_2,bins)
+        high_counts        = (counts_2/float(len(frac_mass_2))/dlogM)
+        
+        if eco == True:
+            high_err[frac_dict[ii]]   = np.sqrt(counts_2)/len(frac_mass_2)/dlogM
+        
+        hist_dict_high[ii] = high_counts
+        
+    if eco == True:
+        hist_dict_low['low_err']   = low_err
+        hist_dict_high['high_err'] = high_err
+    
+    return hist_dict_low, hist_dict_high
 #####################################################################################
 
 def plot_all_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx):
@@ -374,6 +444,94 @@ def plot_eco_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx,only=False):
     y_vals_2 = y_vals[0][frac_vals[hh]]
     ax.errorbar(bin_centers,y_vals_2,yerr=y_vals[1][hh],\
                 color='deeppink',linewidth=2)
+
+#######################################################################################
+
+def plot_hists(mass,neigh_val,bins,dlogM,ax,col_num,plot_idx):
+    """
+    Returns a plot showing the density-cut, mass counts.
+    
+    Parameters
+    ----------
+    mass: array-like
+        A 1D array with log stellar mass values
+    neigh_val: integer-like
+        Value which will be inserted into the text label of each plot
+    bins: array-like
+        A 1D array with the values which will be used as the bin edges   
+    dlogM: float-like
+        The log difference between bin edges
+    ax: axis-like
+        A value which specifies which axis each subplot is to be 
+        plotted to
+    col_num: integer-like
+        Integer which specifies which column is currently being 
+        plotted. Used for labelling subplots
+    plot_idx: integer-like
+        Specifies which subplot the figure is plotted to. Used for
+        labeling the x-axis
+        
+    Returns
+    -------
+    Figure with two curves, optionally (if uncommented) plotted in step
+    
+    """
+    ax.set_yscale('log')
+    if col_num==0:
+        title_label = 'Mass 50/50, {0} NN'.format(neigh_val)
+        frac_val    = 2
+        ax.text(0.05, 0.95, title_label,horizontalalignment='left',\
+                verticalalignment='top',transform=ax.transAxes,fontsize=12)
+    elif col_num==1:
+        title_label = 'Mass 25/75, {0} NN'.format(neigh_val)
+        frac_val    = 4
+        ax.text(0.05, 0.95, title_label,horizontalalignment='left',\
+                verticalalignment='top',transform=ax.transAxes,fontsize=12)
+    elif col_num==2:
+        title_label = 'Mass 10/90, {0} NN'.format(neigh_val)
+        frac_val    = 10
+        ax.text(0.05, 0.95, title_label,horizontalalignment='left',\
+                verticalalignment='top',transform=ax.transAxes,fontsize=12)
+    ax.set_xlim(9.1,11.9)
+    ax.set_ylim([10**-3,10**1])
+    ax.set_xticks(np.arange(9.5, 12., 0.5))
+    ax.set_yticks([10**-2,10**0])
+    
+    frac_data     = (len(mass)/frac_val)
+
+    frac_mass     = mass[0:frac_data]
+    counts, edges = np.histogram(frac_mass,bins)
+    low_counts    = (counts/float(len(frac_mass))/dlogM)
+    
+    bins_cens     = .5*(edges[:-1]+edges[1:])
+#     ax.step(bins_cens, low_counts, color='lightslategrey',where='mid',alpha=0.1)
+    ax.plot(bins_cens, low_counts, color='lightslategrey',alpha=0.1)
+
+    frac_mass_2       =  mass[-frac_data:]
+    counts_2, edges_2 =  np.histogram(frac_mass_2,bins)
+    high_counts       = (counts_2/float(len(frac_mass_2))/dlogM)
+#     ax.step(bins_cens, high_counts, color='lightslategray',where='mid',alpha=0.1)
+    ax.plot(bins_cens, high_counts, color='lightslategray',alpha=0.1)
+#######################################################################################
+
+def plot_eco_hists(mass,bins,dlogM,ax,col):
+    if   col==0:
+        frac_val    = 2
+    elif col==1:
+        frac_val    = 4
+    elif col==2:
+        frac_val    = 10
+    
+    frac_data     = (len(mass)/frac_val)
+
+    frac_mass     = mass[0:frac_data]
+    counts, edges = np.histogram(frac_mass,bins)
+    bins_cens     = .5*(edges[:-1]+edges[1:])
+    ax.step(bins_cens, (counts/float(len(frac_mass))/dlogM), color='lime',where='mid')
+
+    frac_mass_2       = mass[-frac_data:]
+    counts_2, edges_2 = np.histogram(frac_mass_2,bins)
+    ax.step(bins_cens, (counts_2/float(len(frac_mass_2))/dlogM), color='deeppink',where='mid')
 
 #######################################################################################
 
@@ -496,6 +654,38 @@ def plot_bands(bin_centers,upper,lower,ax):
     """
     ax.fill_between(bin_centers,upper,lower,color='silver',alpha=0.1)
 
+#######################################################################################
+
+def plot_med_range(bin_centers,low_lim,up_lim,ax,alpha,color='gray'):
+    """
+    Returns a plot with a transparent band highlighting a range of
+        values.
+    
+    Parameters
+    ----------
+    bin_centers: array-like
+        An array with the medians mass values of the mass bins
+    low_lim: array-like
+        Array with the min y-values among all the mocks
+        for each mass bin
+    up_lim: array-like
+        Array with the max y-values among all the mocks
+        for each mass bin 
+    ax: axis-like
+        A value which specifies which axis each subplot is to be 
+        plotted to
+    alpha: float-like
+        A value which will determine the tranparency of the band
+    color: str
+        Any color which Python recognizes; sets the color of the band
+        
+    Returns
+    -------
+    A colored band spanning from the max y-values to the minimum.
+    
+    """
+    ax.fill_between(bin_centers,low_lim,up_lim,color=color,alpha=alpha)    
+
 ##############################################################################
 ##############################################################################
 ##############################################################################
@@ -522,7 +712,8 @@ dec_arr  = np.array([(np.array(PD_comp[ii])).T[1] for ii in range(len(PD_comp))]
 cz_arr   = np.array([(np.array(PD_comp[ii])).T[2] for ii in range(len(PD_comp))])
 mass_arr = np.array([(np.array(PD_comp[ii])).T[3] for ii in range(len(PD_comp))])
 
-coords_test = np.array([sph_to_cart(ra_arr[vv],dec_arr[vv],cz_arr[vv]) for vv in range(len(ECO_cats))])
+coords_test = np.array([sph_to_cart(ra_arr[vv],dec_arr[vv],cz_arr[vv]) \
+                for vv in range(len(ECO_cats))])
 
 neigh_vals  = np.array([1,2,3,5,10,20])
 
@@ -533,8 +724,27 @@ for vv in range(len(coords_test)):
     nn_arr[vv] = spatial.cKDTree(coords_test[vv])
     nn_arr[vv] = np.array(nn_arr[vv].query(coords_test[vv],21)[0])
 
-nn_specs       = [(np.array(nn_arr).T[ii].T[neigh_vals].T) for ii in range(len(coords_test))]
-nn_mass_dist   = np.array([(np.column_stack((mass_arr[qq],nn_specs[qq]))) for qq in range(len(coords_test))])
+nn_specs       = [(np.array(nn_arr).T[ii].T[neigh_vals].T) for ii in \
+                    range(len(coords_test))]
+nn_mass_dist   = np.array([(np.column_stack((mass_arr[qq],nn_specs[qq]))) \
+                    for qq in range(len(coords_test))])
+
+###################################################################################
+sat_cols    = (13,25)
+  
+sat_names   = ['logMstar','cent_sat_flag']
+SF_PD       = [(pd.read_csv(ECO_cats[ii],sep="\s+", usecols= sat_cols,header=None,\
+                     skiprows=2,names=sat_names)) for ii in range(8)]
+SF_PD_comp  = [(SF_PD[ii][SF_PD[ii].logMstar >= 9.1]) for ii in \
+                range(len(ECO_cats))]
+
+
+sats_num  = np.array([(len(SF_PD_comp[ii][SF_PD_comp[ii].cent_sat_flag==0])) \
+            for ii in range(len(SF_PD_comp))])
+cents_num = np.array([(len(SF_PD_comp[ii][SF_PD_comp[ii].cent_sat_flag==1])) \
+            for ii in range(len(SF_PD_comp))])
+gal_tot   = np.array([(len(SF_PD_comp[ii])) for ii in range(len(SF_PD_comp))])
+# print sats_num/gal_tot
 
 ###################################################################################
 
@@ -554,21 +764,27 @@ for ii in range(len(coords_test)):
     nn_dist[ii]['mass'] = nn_mass_dist[ii].T[0]
 
     for jj in range(len(neigh_vals)):
-        nn_dist[ii][(neigh_vals[jj])]  = np.array(nn_mass_dist[ii].T[range(1,len(neigh_vals)+1)[jj]])
-        nn_dens[ii][(neigh_vals[jj])]  = np.column_stack((nn_mass_dist[ii].T[0],calc_dens\
-                                            (neigh_vals[jj],nn_mass_dist[ii].T[range(1,len(neigh_vals)+1)[jj]])))
+        nn_dist[ii][(neigh_vals[jj])]  = np.array(nn_mass_dist[ii].T\
+                                            [range(1,len(neigh_vals)+1)[jj]])
+        nn_dens[ii][(neigh_vals[jj])]  = np.column_stack((nn_mass_dist[ii].T\
+                                            [0],calc_dens(neigh_vals[jj],\
+                                            nn_mass_dist[ii].T[range(1,len\
+                                                (neigh_vals)+1)[jj]])))
 
         idx = np.array([nn_dens[ii][neigh_vals[jj]].T[1].argsort()])
         mass_dat[ii][(neigh_vals[jj])] = (nn_dens[ii][neigh_vals[jj]][idx].T[0])
 
-        bin_centers, mass_freq[ii], ratio_info[ii][neigh_vals[jj]] = plot_calcs(mass_dat[ii][neigh_vals[jj]],bins,dlogM)
+        bin_centers, mass_freq[ii], ratio_info[ii][neigh_vals[jj]] = \
+                            plot_calcs(mass_dat[ii][neigh_vals[jj]],bins,dlogM)
 
 all_mock_meds = [[] for xx in range(len(nn_mass_dist))]
 
 for vv in range(len(nn_mass_dist)):
-    all_mock_meds[vv] = np.array([bin_func(nn_mass_dist[vv],bins,(jj+1)) for jj in range(len(nn_mass_dist[vv].T)-1)])
+    all_mock_meds[vv] = np.array([bin_func(nn_mass_dist[vv],bins,(jj+1)) \
+                                for jj in range(len(nn_mass_dist[vv].T)-1)])
     
-med_plot_arr = [([[] for yy in xrange(len(nn_mass_dist))]) for xx in xrange(len(neigh_vals))]
+med_plot_arr = [([[] for yy in xrange(len(nn_mass_dist))]) \
+                                            for xx in xrange(len(neigh_vals))]
 
 for ii in range(len(neigh_vals)):
     for jj in range(len(nn_mass_dist)):
@@ -582,15 +798,60 @@ for jj in range(len(mass_freq_plot.T)):
     min_lim[jj] = min(mass_freq_plot.T[jj])
 
 ###################################################################################
+# ordered_mass = nn_mass_dist[0].T[0][(nn_mass_dist[0].T[0].argsort())]
+dist_cont = [[[[] for zz in xrange(len(bins)-1)] for yy in \
+              xrange(len(nn_mass_dist))] for xx in xrange(1,len(nn_mass_dist[0].T))]
+
+for ii in xrange(len(nn_mass_dist)):
+    sorting_test  = np.digitize(nn_mass_dist[ii].T[0],bins)
+    bin_nums      = np.unique(sorting_test)
+    bin_nums_list = list(bin_nums)
+    if 15 in bin_nums_list:
+        bin_nums_list.remove(15)
+        bin_nums  = np.array(bin_nums_list)
+    for jj in xrange(1,len(nn_mass_dist[ii].T)):
+        for hh in bin_nums:
+            dist_cont[jj-1][ii][hh-1] = (nn_mass_dist[ii].T[jj][sorting_test==hh])
+
+###################################################################################
+top_68 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
+            xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
+low_68 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
+            xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
+top_95 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
+            xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
+low_95 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
+            xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
+med_50 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
+            xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
+
+for aa in xrange(len(neigh_vals)):
+    for bb in xrange(len(nn_mass_dist)):
+        for cc in xrange(len(dist_cont[aa][bb])):
+            top_68[aa][bb][cc] = np.percentile(dist_cont[aa][bb][cc],84)
+            low_68[aa][bb][cc] = np.percentile(dist_cont[aa][bb][cc],16)
+            top_95[aa][bb][cc] = np.percentile(dist_cont[aa][bb][cc],97.5)
+            low_95[aa][bb][cc] = np.percentile(dist_cont[aa][bb][cc],2.5)
+            med_50[aa][bb][cc] = np.median((dist_cont[aa][bb][cc]))
+            
+top_68 = np.array(top_68)
+low_68 = np.array(low_68)
+top_95 = np.array(top_95)
+low_95 = np.array(low_95)
+med_50 = np.array(med_50)
+
+###################################################################################
 
 frac_vals   = [2,4,10]
-nn_plot_arr = [[[] for yy in xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
+nn_plot_arr = [[[] for yy in xrange(len(nn_mass_dist))] for xx in \
+    xrange(len(neigh_vals))]
 
 for ii in range(len(neigh_vals)):
     for jj in range(len(nn_mass_dist)):
         nn_plot_arr[ii][jj] = (ratio_info[jj][neigh_vals[ii]])
         plot_frac_arr = [[[[] for yy in xrange(len(nn_mass_dist))] \
-                         for zz in xrange(len(frac_vals))] for xx in xrange(len(nn_plot_arr))]
+                         for zz in xrange(len(frac_vals))] for xx in \
+                         xrange(len(nn_plot_arr))]
 
 for jj in range(len(nn_mass_dist)):
     for hh in range(len(frac_vals)):
@@ -621,21 +882,25 @@ mass_eco = (np.array(eco_comp)).T[3]
 
 coords_eco        = sph_to_cart(ra_eco,dec_eco,cz_eco)
 eco_neighbor_tree = spatial.cKDTree(coords_eco)
-eco_tree_dist     = np.array(eco_neighbor_tree.query(coords_eco,(neigh_vals[-1]+1))[0])
+eco_tree_dist     = np.array(eco_neighbor_tree.query(coords_eco,\
+                    (neigh_vals[-1]+1))[0])
 
 eco_mass_dist = np.column_stack((mass_eco,eco_tree_dist.T[neigh_vals].T))
 eco_dens = ([calc_dens(neigh_vals[jj],\
             (eco_mass_dist.T[range(1,7)[jj]])) for jj in range(len(neigh_vals))])
 
-eco_mass_dens = [(np.column_stack((mass_eco,eco_dens[ii]))) for ii in range(len(neigh_vals))]
+eco_mass_dens = [(np.column_stack((mass_eco,eco_dens[ii]))) for ii in \
+                range(len(neigh_vals))]
 eco_idx  = [(eco_mass_dens[jj].T[1].argsort()) for jj in range(len(neigh_vals))]
-eco_mass_dat  = [(eco_mass_dens[jj][eco_idx[jj]].T[0]) for jj in range(len(neigh_vals))]
+eco_mass_dat  = [(eco_mass_dens[jj][eco_idx[jj]].T[0]) for jj in \
+                range(len(neigh_vals))]
 
 eco_ratio_info    = [[] for xx in xrange(len(eco_mass_dat))]
 
 
 for qq in range(len(eco_mass_dat)):
-    bin_centers, eco_freq, eco_ratio_info[qq] = plot_calcs(eco_mass_dat[qq],bins,dlogM,mass_err=True,ratio_err=True)
+    bin_centers, eco_freq, eco_ratio_info[qq] = plot_calcs(eco_mass_dat[qq],\
+                                    bins,dlogM,mass_err=True,ratio_err=True)
 
 eco_medians   = [[] for xx in xrange(len(eco_mass_dat))]    
 
@@ -711,7 +976,8 @@ while zz <= 16:
                 plot_bands(bin_centers,upper,lower,axes_flat[zz] )
                 plot_all_rats(bin_centers,(plot_frac_arr[ii][hh][jj]),\
                               neigh_vals[ii],axes_flat[zz],hh,zz)
-            plot_eco_rats(bin_centers,(eco_ratio_info[ii]),neigh_vals[ii],axes_flat[zz],hh,zz)
+            plot_eco_rats(bin_centers,(eco_ratio_info[ii]),neigh_vals[ii],\
+                                    axes_flat[zz],hh,zz)
             zz += 1
 
 plt.subplots_adjust(left=0.02, bottom=0.09, right=1.00, top=1.00,\
@@ -755,7 +1021,8 @@ while zz <=4:
                 plot_bands(bin_centers,upper_m,lower_m,axes_flat[zz])
                 plot_all_meds(bin_centers,med_plot_arr[ii][vv],axes_flat[zz],zz)
                 plot_eco_meds(bin_centers,eco_medians[ii][0],\
-                              eco_medians[ii][1],eco_medians[ii][2],axes_flat[zz],zz)
+                              eco_medians[ii][1],eco_medians[ii][2],\
+                                                axes_flat[zz],zz)
         zz   += 1
         
 plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
@@ -764,3 +1031,203 @@ plt.show()
 
 ####################################################################################                
 
+hist_low_info  = {}
+hist_high_info = {}
+
+for ii in xrange(len(coords_test)):
+    hist_low_info[ii]  = {}
+    hist_high_info[ii] = {}
+    
+    for jj in range(len(neigh_vals)):
+        hist_low_info[ii][neigh_vals[jj]], \
+        hist_high_info[ii][neigh_vals[jj]] = \
+        hist_calcs(mass_dat[ii][neigh_vals[jj]],bins,dlogM)
+        
+frac_vals     = [2,4,10]
+hist_low_arr  = [[[] for yy in xrange(len(nn_mass_dist))] for xx in \
+    xrange(len(neigh_vals))]
+hist_high_arr = [[[] for yy in xrange(len(nn_mass_dist))] for xx in \
+    xrange(len(neigh_vals))]
+
+for ii in range(len(neigh_vals)):
+    for jj in range(len(nn_mass_dist)):
+        hist_low_arr[ii][jj]  = (hist_low_info[jj][neigh_vals[ii]])
+        hist_high_arr[ii][jj] = (hist_high_info[jj][neigh_vals[ii]])
+        
+        
+        plot_low_hist  = [[[[] for yy in xrange(len(nn_mass_dist))] \
+                         for zz in xrange(len(frac_vals))] for xx in \
+                         xrange(len(hist_low_arr))]
+        
+        plot_high_hist = [[[[] for yy in xrange(len(nn_mass_dist))] \
+                 for zz in xrange(len(frac_vals))] for xx in \
+                 xrange(len(hist_high_arr))]
+
+for jj in range(len(nn_mass_dist)):
+    for hh in range(len(frac_vals)):
+        for ii in range(len(neigh_vals)):
+            plot_low_hist[ii][hh][jj]  = hist_low_arr[ii][jj][frac_vals[hh]]        
+            plot_high_hist[ii][hh][jj] = hist_high_arr[ii][jj][frac_vals[hh]]        
+
+###############################################################################
+
+C = {}
+D = {}
+nn_dict   = {1:0,2:1,3:2,5:3,10:4,20:5}
+coln_dict = {2:0,4:1,10:2}
+
+nn_keys   = np.sort(nn_dict.keys())
+col_keys  = np.sort(coln_dict.keys())
+
+vv_num    = len(plot_low_hist[nn_dict[1]][coln_dict[2]])
+
+for nn in nn_keys:
+    for coln in col_keys:
+        bin_str    = '{0}_{1}'.format(nn,coln)
+        for cc in range(vv_num):
+            vv_arr = np.array(plot_low_hist[nn_dict[nn]][coln_dict[coln]][cc])
+            n_elem = len(vv_arr)
+            if cc == 0:
+                vv_tot = np.zeros((n_elem,1))
+            vv_tot = np.insert(vv_tot,len(vv_tot.T),vv_arr,1)
+        vv_tot = np.array(np.delete(vv_tot,0,axis=1))
+        for kk in xrange(len(vv_tot)):
+            vv_tot[kk][vv_tot[kk] == np.inf] = np.nan
+        vv_tot_max = [np.nanmax(vv_tot[kk]) for kk in xrange(len(vv_tot))]
+        vv_tot_min = [np.nanmin(vv_tot[kk]) for kk in xrange(len(vv_tot))]
+        C[bin_str] = [vv_tot_max,vv_tot_min]
+        
+hh_num   = len(plot_high_hist[nn_dict[1]][coln_dict[2]])
+
+for nn in nn_keys:
+    for coln in col_keys:
+        bin_str    = '{0}_{1}'.format(nn,coln)
+        for cc in range(hh_num):
+            hh_arr = np.array(plot_high_hist[nn_dict[nn]][coln_dict[coln]][cc])
+            n_elem = len(hh_arr)
+            if cc == 0:
+                hh_tot = np.zeros((n_elem,1))
+            hh_tot = np.insert(hh_tot,len(hh_tot.T),hh_arr,1)
+        hh_tot     = np.array(np.delete(hh_tot,0,axis=1))
+        for kk in xrange(len(hh_tot)):
+            hh_tot[kk][hh_tot[kk] == np.inf] = np.nan
+        hh_tot_max = [np.nanmax(hh_tot[kk]) for kk in xrange(len(hh_tot))]
+        hh_tot_min = [np.nanmin(hh_tot[kk]) for kk in xrange(len(hh_tot))]
+        D[bin_str] = [hh_tot_max,hh_tot_min]        
+
+###############################################################################
+
+nrow_num  = int(6)
+ncol_num  = int(3)
+
+fig, axes = plt.subplots(nrows=nrow_num, ncols=ncol_num, \
+            figsize=(150,200), sharex= True,sharey=True)
+axes_flat = axes.flatten()
+
+for ii in range(len(mass_dat)):
+    zz = 0
+    for jj in range(len(neigh_vals)):
+        for hh in range(3):
+            upper    = C['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][0]
+            lower    = C['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][1]
+            upper_2  = D['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][0]
+            lower_2  = D['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][1]
+            plot_bands(bin_centers,upper,lower,axes_flat[zz])
+            plot_bands(bin_centers,upper_2,lower_2,axes_flat[zz])
+            plot_hists(mass_dat[ii][neigh_vals[jj]],neigh_vals[jj],bins,dlogM,\
+                axes_flat[zz], hh, zz)
+            if ii == 0:
+                plot_eco_hists(eco_mass_dat[jj],bins,dlogM,\
+                axes_flat[zz],hh)
+            zz += int(1)         
+
+plt.subplots_adjust(left=0.02, bottom=0.09, right=0.98, top=0.98,\
+                    hspace=0, wspace=0)            
+
+plt.show()
+###############################################################################
+
+def schechter_log_func(stellar_mass,phi_star,alpha,m_star):
+    """
+    Returns a plottable Schechter function for the 
+        stellar mass functions of galaxies
+    
+    Parameters
+    ----------
+    stellar_mass: array-like
+        An array of unlogged stellar mass values which 
+        will eventually be the x-axis values the function
+        is plotted against
+    phi_star: float-like
+        A constant which normalizes (?) the function;
+        Moves the graph up and down
+    alpha: negative integer-like
+        The faint-end, or in this case, low-mass slope;
+        Describes the power-law portion of the curve
+    m_star: float-like
+        Unlogged value of the characteristic (?) stellar
+        mass; the "knee" of the function, where the 
+        power-law gives way to the exponential portion
+        
+    Returns
+    -------
+    res: array-like
+        Array of values prepared to be plotted on a log
+        scale to display the Schechter function
+        
+    """
+    constant = np.log(10) * phi_star
+    log_M_Mstar = np.log10(stellar_mass/m_star)
+    res = constant * 10**(log_M_Mstar * (alpha+1)) * \
+        np.exp(-10**log_M_Mstar)
+        
+    return res
+
+###############################################################################
+
+
+xdata = 10**bin_centers
+p0    = (1,-1.05,10**10.64)
+param_arr = [[] for ii in range(len(mass_freq)+1)]
+
+fig,axes  = plt.subplots(nrows=3,ncols=3,sharex=True,sharey=True,\
+                        figsize=(150,200))
+axes_flat = axes.flatten()
+
+for ii in range(len(mass_freq)+1):
+    if ii == 8:
+        ydata = eco_freq[0]
+        opt_v, est_cov = optimize.curve_fit(schechter_log_func,xdata,ydata,\
+                            p0=p0,sigma=eco_freq[1])
+    else:
+        ydata = (mass_freq[ii])
+        opt_v, est_cov = optimize.curve_fit(schechter_log_func,xdata,ydata,p0=p0)
+    schech_vals   = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],opt_v[2])
+    param_arr[ii] = opt_v
+    param_arr = np.array(param_arr)
+    
+    ax = axes_flat[ii]
+    ax.set_yscale('log')
+    ax.set_ylim([10**-3,10**0])
+    ax.set_xlim([9.1,11.9])
+    ax.set_yticks([10**-2,10**-1,10**0])
+    ax.plot(bin_centers,schech_vals,label='Schechter',color='silver')
+    if ii == 8:
+        ax.errorbar(bin_centers,ydata,yerr=eco_freq[1],color='deeppink',label='ECO')
+    else:
+        ax.plot(bin_centers,ydata,label='Mock',color='darkorchid')
+    if ii == 0 or ii == 8:
+        ax.legend(loc='best')
+    if ii == 7:
+        ax.set_xlabel('$\log\ M_{*}$',fontsize=18)
+    
+plt.subplots_adjust(left=0.03, bottom=0.08, right=0.99, top=0.99,\
+                    hspace=0,wspace=0)                
+    
+plt.show()   
+
+###############################################################################
+
+
+
+###############################################################################

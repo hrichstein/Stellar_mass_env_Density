@@ -232,11 +232,16 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
     bin_nums     = np.unique(digitized)
     bin_nums     = list(bin_nums)
 
-    if 12 not in bin_nums:
-        bin_nums.append(12)
-    if 13 in bin_nums:
-        bin_nums.remove(13)
-    
+    # if 12 not in bin_nums:
+    #     bin_nums.append(12)
+    # if 13 in bin_nums:
+    #     bin_nums.remove(13
+
+    if 13 not in bin_nums:
+        bin_nums.append(13)
+    if 14 in bin_nums:
+        bin_nums.remove(14)
+
     bin_nums = np.array(bin_nums)
 
     # print bin_nums
@@ -714,8 +719,10 @@ dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density\Cat
 usecols  = (0,1,8,13)
 
 #scatter 3 dec
-bins  = np.linspace(9.1,11.7,14)
-dlogM = (11.7-9.1)/13
+# bins  = np.linspace(9.1,11.7,14)
+# dlogM = (11.7-9.1)/13
+bins  = np.linspace(9.1,11.9,15)
+dlogM = (11.9-9.1)/14
 
 ##############################################################################
 ##############################################################################
@@ -836,19 +843,27 @@ for ii in xrange(len(nn_mass_dist)):
     sorting_test  = np.digitize(nn_mass_dist[ii].T[0],bins)
     bin_nums      = np.unique(sorting_test)
     bin_nums_list = list(bin_nums)
-    if 13 not in bin_nums:
-        bin_nums_list.append(13)
+    # if 13 not in bin_nums:
+    #     bin_nums_list.append(13)
+    if 14 not in bin_nums:
+        bin_nums_list.append(14)
         bin_nums = np.array(bin_nums_list)
-    if 14 in bin_nums_list:
-        bin_nums_list.remove(14)
+    # if 14 in bin_nums_list:
+    #     bin_nums_list.remove(14)
+    #     bin_nums  = np.array(bin_nums_list)
+    if 15 in bin_nums_list:
+        bin_nums_list.remove(15)
         bin_nums  = np.array(bin_nums_list)
     for jj in xrange(1,len(nn_mass_dist[ii].T)):
         for hh in bin_nums:
-            dist_cont[jj-1][ii][hh-1] = (nn_mass_dist[ii].T[jj][sorting_test==hh])
+            dist_cont[jj-1][ii][hh-1] = (nn_mass_dist[ii].T[jj]\
+                [sorting_test==hh])
             if len(dist_cont[jj-1][ii][hh-1]) == 0:
                 (dist_cont[jj-1][ii][hh-1]) = list(dist_cont[jj-1][ii][hh-1])
-                (dist_cont[jj-1][ii][hh-1]).append(np.zeros(13))
-                (dist_cont[jj-1][ii][hh-1]) = np.array((dist_cont[jj-1][ii][hh-1]))
+                (dist_cont[jj-1][ii][hh-1]).append(np.zeros\
+                    (len(dist_cont[1][0][0])))
+                (dist_cont[jj-1][ii][hh-1]) = np.array((dist_cont[jj-1][ii]\
+                    [hh-1]))
 
 # for ii in xrange(len(nn_mass_dist)):
 #     for jj in xrange(1,len(nn_mass_dist[ii].T)):
@@ -928,8 +943,11 @@ eco_tree_dist     = np.array(eco_neighbor_tree.query(coords_eco,\
                     (neigh_vals[-1]+1))[0])
 
 eco_mass_dist = np.column_stack((mass_eco,eco_tree_dist.T[neigh_vals].T))
+##range 1,7 because of the six nearest neighbors (and fact that 0 is mass)
+##the jj is there to specify which index in the [1,6] array
 eco_dens = ([calc_dens(neigh_vals[jj],\
-            (eco_mass_dist.T[range(1,7)[jj]])) for jj in range(len(neigh_vals))])
+            (eco_mass_dist.T[range(1,7)[jj]])) for jj in range\
+            (len(neigh_vals))])
 
 eco_mass_dens = [(np.column_stack((mass_eco,eco_dens[ii]))) for ii in \
                 range(len(neigh_vals))]
@@ -1037,7 +1055,6 @@ for nn in range(len(med_plot_arr)):
         med_str  = '{0}'.format(nn)
         yy_arr   = med_plot_arr[nn][ii]
         n_y_elem = len(yy_arr)
-        print n_y_elem
         if ii == 0:
             yy_tot = np.zeros((n_y_elem,1))
         yy_tot = np.insert(yy_tot,len(yy_tot.T),yy_arr,1)
@@ -1067,9 +1084,9 @@ while zz <=4:
                     axes_flat[zz],0.15,color='gainsboro')
                 plot_bands(bin_centers,upper_m,lower_m,axes_flat[zz])
                 plot_all_meds(bin_centers,med_plot_arr[ii][vv],axes_flat[zz],zz)
-                plot_eco_meds(bin_centers,eco_medians[ii][0],\
-                              eco_medians[ii][1],eco_medians[ii][2],\
-                                                axes_flat[zz],zz)
+                # plot_eco_meds(bin_centers,eco_medians[ii][0],\
+                #               eco_medians[ii][1],eco_medians[ii][2],\
+                #                                 axes_flat[zz],zz)
         zz   += 1
         
 plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
@@ -1088,7 +1105,7 @@ for ii in xrange(len(coords_test)):
     for jj in range(len(neigh_vals)):
         hist_low_info[ii][neigh_vals[jj]], \
         hist_high_info[ii][neigh_vals[jj]] = \
-        hist_calcs(mass_dat[ii][neigh_vals[jj]],bins,dlogM)
+        (mass_dat[ii][neigh_vals[jj]],bins,dlogM)
         
 frac_vals     = [2,4,10]
 hist_low_arr  = [[[] for yy in xrange(len(nn_mass_dist))] for xx in \
@@ -1241,8 +1258,11 @@ fig,axes  = plt.subplots(nrows=3,ncols=3,sharex=True,sharey=True,\
                         figsize=(150,200))
 axes_flat = axes.flatten()
 
-for ii in range(len(mass_freq)+1):
-    if ii == 8:
+##rather than having mass_freq go out of index, just used if statement and 
+##directed it to the eco info
+
+for ii in range(len(mass_freq)+1):    
+    if ii == range(len(mass_freq)+1)[-1]:
         ydata = eco_freq[0]
         opt_v, est_cov = optimize.curve_fit(schechter_log_func,xdata,ydata,\
                             p0=p0,sigma=eco_freq[1])

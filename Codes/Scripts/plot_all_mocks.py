@@ -455,7 +455,7 @@ def plot_eco_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx,only=False):
     frac_vals = np.array([2,4,10])
     y_vals_2 = y_vals[0][frac_vals[hh]]
     ax.errorbar(bin_centers,y_vals_2,yerr=y_vals[1][hh],\
-                color='red',linewidth=2)
+                color='dodgerblue',linewidth=2)
 
 #######################################################################################
 
@@ -547,7 +547,7 @@ def plot_eco_hists(mass,bins,dlogM,ax,col):
     frac_mass_2       = mass[-frac_data:]
     counts_2, edges_2 = np.histogram(frac_mass_2,bins)
     ax.step(bins_cens, (counts_2/float(len(frac_mass_2))/dlogM), \
-            color='red',where='mid')
+            color='dodgerblue',where='mid')
 
 ###############################################################################
 
@@ -640,7 +640,7 @@ def plot_eco_meds(bin_centers,y_vals,low_lim,up_lim,ax,plot_idx,only=False):
         if plot_idx == 4:
             ax.set_xlabel('$\log\ M_{*}$',fontsize=18)
     ax.errorbar(bin_centers,y_vals,yerr=0.1,lolims=low_lim,\
-        uplims=up_lim,color='red')
+        uplims=up_lim,color='dodgerblue')
 
 ##############################################################################
 
@@ -666,7 +666,7 @@ def plot_bands(bin_centers,upper,lower,ax):
     Returns
     -------
     A semi-transparent band overlaying the area of the plot 
-    bordered by the mocks
+    bordedodgerblue by the mocks
     """
     ax.fill_between(bin_centers,upper,lower,color='silver',alpha=0.1)
 
@@ -697,7 +697,7 @@ def plot_med_range(bin_centers,low_lim,up_lim,ax,alpha,color='gray'):
         
     Returns
     -------
-    A colored band spanning from the max y-values to the minimum.
+    A colododgerblue band spanning from the max y-values to the minimum.
     
     """
     ax.fill_between(bin_centers,low_lim,up_lim,color=color,alpha=alpha)    
@@ -706,7 +706,7 @@ def plot_med_range(bin_centers,low_lim,up_lim,ax,alpha,color='gray'):
 ##############################################################################
 ##############################################################################
 
-dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density\Catalogs\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_scatter_mocks\Resolve_plk_5001_so_mvir_scatter0p1_ECO_Mocks"
+dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density\Catalogs\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_scatter_mocks\Resolve_plk_5001_so_mvir_scatter0p3_ECO_Mocks"
 usecols  = (0,1,8,13)
 
 #scatter 1 dec
@@ -812,9 +812,9 @@ for ii in range(len(neigh_vals)):
     for jj in range(len(nn_mass_dist)):
         med_plot_arr[ii][jj] = all_mock_meds[jj][ii]    
 
-for ii in range(len(neigh_vals)):
-    for jj in range(len(nn_mass_dist)):
-        print len(all_mock_meds[jj][ii])
+# for ii in range(len(neigh_vals)):
+#     for jj in range(len(nn_mass_dist)):
+#         print len(all_mock_meds[jj][ii])
 
 mass_freq_plot  = (np.array(mass_freq))
 max_lim = [[] for xx in range(len(mass_freq_plot.T))]
@@ -958,7 +958,7 @@ ax.tick_params(axis='both', labelsize=14)
 for ii in range(len(mass_freq)):
     ax.plot(bin_centers,mass_freq[ii],color='silver')
     ax.fill_between(bin_centers,max_lim,min_lim,color='silver',alpha=0.1)
-ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='red',\
+ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='dodgerblue',\
             linewidth=2,label='ECO')
 ax.legend(loc='best')
 
@@ -1215,7 +1215,7 @@ def schechter_log_func(stellar_mass,phi_star,alpha,m_star):
     Returns
     -------
     res: array-like
-        Array of values prepared to be plotted on a log
+        Array of values prepadodgerblue to be plotted on a log
         scale to display the Schechter function
         
     """
@@ -1256,7 +1256,7 @@ for ii in range(len(mass_freq)+1):
     ax.set_yticks([10**-2,10**-1,10**0])
     ax.plot(bin_centers,schech_vals,label='Schechter',color='silver')
     if ii == 8:
-        ax.errorbar(bin_centers,ydata,yerr=eco_freq[1],color='red',\
+        ax.errorbar(bin_centers,ydata,yerr=eco_freq[1],color='dodgerblue',\
             label='ECO')
     else:
         ax.plot(bin_centers,ydata,label='Mock',color='darkorchid')

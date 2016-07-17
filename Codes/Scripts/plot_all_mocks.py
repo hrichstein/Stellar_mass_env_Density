@@ -198,24 +198,26 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
     Parameters
     ----------
     mass_dist: array-like
-        An array with mass values in at index 0 (when transformed) and distance to the Nth 
-        nearest neighbor in the others
+        An array with mass values in at index 0 (when transformed) and distance 
+        to the Nth nearest neighbor in the others
         Example: 6239 by 7
             Has mass values and distances to 6 Nth nearest neighbors  
     bins: array=like
         A 1D array with the values which will be used as the bin edges     
     kk: integer-like
-        The index of mass_dist (transformed) where the appropriate distance array may be found
+        The index of mass_dist (transformed) where the appropriate distance 
+        array may be found
 
     Optional
     --------
     bootstrap == True
-        Calculates the bootstrap errors associated with each median distance value.
-        Creates an array housing arrays containing the actual distance values
-        associated with every galaxy in a specific bin. Bootstrap error is then 
-        performed using astropy, and upper and lower one sigma values are found
-        for each median value.  These are added to a list with the median distances, 
-        and then converted to an array and returned in place of just 'medians.'
+        Calculates the bootstrap errors associated with each median distance 
+        value. Creates an array housing arrays containing the actual distance 
+        values associated with every galaxy in a specific bin. Bootstrap error
+        is then performed using astropy, and upper and lower one sigma values 
+        are found for each median value.  These are added to a list with the 
+        median distances, and then converted to an array and returned in place 
+        of just 'medians.'
 
     Returns
     -------
@@ -317,13 +319,14 @@ def hist_calcs(mass,bins,dlogM,eco=False):
         high_counts        = (counts_2/float(len(frac_mass_2))/dlogM)
         
         if eco == True:
-            high_err[frac_dict[ii]]   = np.sqrt(counts_2)/len(frac_mass_2)/dlogM
+            high_err[frac_dict[ii]]   = np.sqrt(counts_2)/len(frac_mass_2)/\
+                                            dlogM
         
         hist_dict_high[ii] = high_counts
         
     if eco == True:
-        hist_dict_low['low_err']   = low_err
-        hist_dict_high['high_err'] = high_err
+        hist_dict_low['low_err']      = low_err
+        hist_dict_high['high_err']    = high_err
     
     return hist_dict_low, hist_dict_high
 #####################################################################################
@@ -504,15 +507,17 @@ def plot_hists(mass,neigh_val,bins,dlogM,ax,col_num,plot_idx):
     low_counts    = (counts/float(len(frac_mass))/dlogM)
     
     bins_cens     = .5*(edges[:-1]+edges[1:])
-#     ax.step(bins_cens, low_counts, color='lightslategrey',where='mid',alpha=0.1)
+#     ax.step(bins_cens, low_counts, color='lightslategrey',where='mid',\
+#        alpha=0.1)
     ax.plot(bins_cens, low_counts, color='lightslategrey',alpha=0.1)
 
     frac_mass_2       =  mass[-frac_data:]
     counts_2, edges_2 =  np.histogram(frac_mass_2,bins)
     high_counts       = (counts_2/float(len(frac_mass_2))/dlogM)
-#     ax.step(bins_cens, high_counts, color='lightslategray',where='mid',alpha=0.1)
+#     ax.step(bins_cens, high_counts, color='lightslategray',where='mid',\
+#        alpha=0.1)
     ax.plot(bins_cens, high_counts, color='lightslategray',alpha=0.1)
-#######################################################################################
+###############################################################################
 
 def plot_eco_hists(mass,bins,dlogM,ax,col):
     if   col==0:
@@ -527,13 +532,15 @@ def plot_eco_hists(mass,bins,dlogM,ax,col):
     frac_mass     = mass[0:frac_data]
     counts, edges = np.histogram(frac_mass,bins)
     bins_cens     = .5*(edges[:-1]+edges[1:])
-    ax.step(bins_cens, (counts/float(len(frac_mass))/dlogM), color='lime',where='mid')
+    ax.step(bins_cens, (counts/float(len(frac_mass))/dlogM), color='lime',\
+            where='mid')
 
     frac_mass_2       = mass[-frac_data:]
     counts_2, edges_2 = np.histogram(frac_mass_2,bins)
-    ax.step(bins_cens, (counts_2/float(len(frac_mass_2))/dlogM), color='deeppink',where='mid')
+    ax.step(bins_cens, (counts_2/float(len(frac_mass_2))/dlogM), \
+            color='deeppink',where='mid')
 
-#######################################################################################
+###############################################################################
 
 def plot_all_meds(bin_centers,y_vals,ax,plot_idx):
     """
@@ -1277,7 +1284,7 @@ def param_finder(hist_counts,bin_centers):
     opt_v,est_cov = optimize.curve_fit(schechter_log_func,xdata,\
                             hist_counts,p0=p0)
     alpha   = opt_v[1]
-    log_m_star  = np.log10(opt_v[2])
+    log_m_star    = np.log10(opt_v[2])
     res_arr = np.array([alpha,log_m_star])
 
     return opt_v, res_arr
@@ -1286,7 +1293,7 @@ def param_finder(hist_counts,bin_centers):
 ###Test that param_finder is working
 
 opt_v,test_arr = param_finder(eco_low[1][2],bin_centers)
-schech_vals   = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
+schech_vals    = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
                     opt_v[2])
 
 fig,ax = plt.subplots()
@@ -1297,6 +1304,11 @@ ax.plot(bin_centers,schech_vals)
 plt.show()
 
 ###############################################################################
+##Creating dictionaries through for loops to house the parameters for each of
+#ECO's 18 different options (6 nn and 3 density cuts)
+
+#One dictionary for the lower portion of the cuts and one for the higher
+
 param_dict_low  = {}
 param_dict_high = {}
 
@@ -1307,16 +1319,20 @@ for dd in neigh_vals:
     for ee in frac_vals:
         param_dict_low[dd][ee]  = {}
         param_dict_high[dd][ee] = {}
-        opt_v, param_dict_low[dd][ee] = param_finder(eco_low[dd][ee],\
+        opt_v, param_dict_low[dd][ee]  = param_finder(eco_low[dd][ee],\
             bin_centers)
         opt_v, param_dict_high[dd][ee] = param_finder(eco_high[dd][ee],\
             bin_centers)
 
+#### Putting the percentile cuts in order, as seen below
+
+#10,25,low_50,high_50,75,90
+
 over_alpha_dict = {}
 over_log_m_star = {}
 for dd in neigh_vals:
-    temp_list_alpha = []
-    temp_list_logMstar = []
+    temp_list_alpha     = []
+    temp_list_logMstar  = []
     over_alpha_dict[dd] = {}
     over_log_m_star[dd] = {}
 
@@ -1332,13 +1348,13 @@ for dd in neigh_vals:
     over_alpha_dict[dd] = temp_list_alpha
     over_log_m_star[dd] = temp_list_logMstar
 
-#10,25,low_50,high_50,75,90
 perc_arr = (10,25,49,51,75,90)
 
 
-fig,ax = plt.subplots()
+fig,ax   = plt.subplots()
 for jj in neigh_vals:
-    ax.plot(perc_arr,over_log_m_star[jj],marker='o',label='{0}'.format(jj),linestyle='--')
+    ax.plot(perc_arr,over_log_m_star[jj],marker='o',label='{0}'.format(jj), \
+        linestyle='--')
 ax.set_xlim([0,100])
 ax.legend(loc='best', numpoints=1)
 ax.set_xlabel('Percentile')
@@ -1346,9 +1362,10 @@ ax.set_ylabel(r'$\log\ M_{*}$')
 plt.show()
 
 
-fig,ax = plt.subplots()
+fig,ax  = plt.subplots()
 for jj in neigh_vals:
-    ax.plot(perc_arr,over_alpha_dict[jj],marker='o',label='{0}'.format(jj),linestyle='--')
+    ax.plot(perc_arr,over_alpha_dict[jj],marker='o',label='{0}'.format(jj), \
+        linestyle='--')
 ax.set_xlim([0,100])
 ax.legend(loc='best', numpoints=1)
 ax.set_xlabel('Percentile')
@@ -1357,32 +1374,38 @@ plt.show()
 
 
 ###############################################################################
+### moving around the parameters so that I can find the differences, rather 
+#than just plotting them straigh-up
 
 diff_dict_m_star = {}
-diff_dict_alpha = {}
+diff_dict_alpha  = {}
 
 for dd in neigh_vals:
     diff_dict_m_star[dd] = {}
-    diff_dict_alpha[dd] = {}
+    diff_dict_alpha[dd]  = {}
     for jj in frac_vals:
-        temp_list_diff_m_star = []
-        temp_list_diff_alpha = []
-        diff_dict_alpha[dd][jj] = {}
+        temp_list_diff_m_star    = []
+        temp_list_diff_alpha     = []
+        diff_dict_alpha[dd][jj]  = {}
         diff_dict_m_star[dd][jj] = {}
         temp_list_diff_m_star.append((param_dict_high[dd][jj][1] - \
             param_dict_low[dd][jj][1]))
-        temp_list_diff_alpha.append((param_dict_high[dd][jj][0] - \
-            param_dict_low[dd][jj][0]))
+        temp_list_diff_alpha.append(((param_dict_high[dd][jj][0]-\
+            param_dict_low[dd][jj][0])/param_dict_high[dd][jj][0] * 100))
         diff_dict_alpha[dd][jj]  = np.array(temp_list_diff_alpha)
         diff_dict_m_star[dd][jj] = np.array(temp_list_diff_m_star)
 
-dict_revamp_mstar = {}
+
+
+
+
+dict_revamp_mstar         = {}
 for dd in neigh_vals:
     dict_revamp_mstar[dd] = []
     for jj in frac_vals:
         dict_revamp_mstar[dd].append(diff_dict_m_star[dd][jj])
 
-dict_revamp_alpha = {}
+dict_revamp_alpha         = {}
 for dd in neigh_vals:
     dict_revamp_alpha[dd] = []
     for jj in frac_vals:
@@ -1391,16 +1414,19 @@ for dd in neigh_vals:
 
 discrete_x = np.array([1,2,3])
 
-fig,ax = plt.subplots()
+fig,ax     = plt.subplots()
 
 for ii in neigh_vals:
     ax.plot(discrete_x,dict_revamp_mstar[ii],marker='o',\
-        linestyle = '--',label='{0}'.format(ii))
+        linestyle= '--',label='{0}'.format(ii))
 ax.set_xlim(0,4)        
-ax.set_xlabel('Fractional Cut')
+ax.set_xlabel('Fractional Cut',fontsize=18)
 ax.set_xticks([1,2,3])
-ax.set_ylabel('Difference in $\log\ M_{*}$')
+ax.set_ylabel('Difference in $\log\ M_{*}$, h-l',fontsize=18)
 ax.legend(loc='best',numpoints=1)
+ax.text(1,0.5,'50/50 Cut',horizontalalignment='center')
+ax.text(2,0.6,'25/75 Cut',horizontalalignment='center')
+ax.text(3,0.75,'10/90 Cut',horizontalalignment='center')
 plt.show()
 
 ######
@@ -1409,12 +1435,15 @@ fig,ax = plt.subplots()
 
 for ii in neigh_vals:
     ax.plot(discrete_x,dict_revamp_alpha[ii],marker='o',\
-        linestyle = '--',label='{0}'.format(ii))
+        linestyle= '--',label='{0}'.format(ii))
 ax.set_xlim(0,4)        
-ax.set_xlabel('Fractional Cut')
+ax.set_xlabel('Fractional Cut',fontsize=18)
 ax.set_xticks([1,2,3])
-ax.set_ylabel(r'Difference in $\alpha$')
+ax.set_ylabel(r'Difference in $\alpha$, (h-l)/h',fontsize=18)
 ax.legend(loc='best',numpoints=1)
+ax.text(1,-7,'50/50 Cut',horizontalalignment='center')
+ax.text(2,-7,'25/75 Cut',horizontalalignment='center')
+ax.text(3,-7,'10/90 Cut',horizontalalignment='center')
 plt.show()
 
 

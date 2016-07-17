@@ -1,6 +1,6 @@
 from __future__ import division, absolute_import
 
-import astropy.stats
+# import astropy.stats
 import glob
 import matplotlib.pyplot as plt 
 from matplotlib import ticker
@@ -248,25 +248,25 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
 
     # print len(medians)
 
-    if bootstrap == True:
-        dist_in_bin    = np.array([(mass_dist.T[kk][digitized==ii]) \
-                for ii in bin_nums])
-        for vv in range(len(dist_in_bin)):
-            if len(dist_in_bin[vv]) == 0:
-                dist_in_bin_list = list(dist_in_bin[vv])
-                dist_in_bin[vv] = np.zeros(len(dist_in_bin[0]))
-        low_err_test   = np.array([np.percentile(astropy.stats.bootstrap\
-                        (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),16) \
-                        for vv in range(len(dist_in_bin))])
-        high_err_test  = np.array([np.percentile(astropy.stats.bootstrap\
-                        (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),84) \
-                        for vv in range(len(dist_in_bin))])
+    # if bootstrap == True:
+    #     dist_in_bin    = np.array([(mass_dist.T[kk][digitized==ii]) \
+    #             for ii in bin_nums])
+    #     for vv in range(len(dist_in_bin)):
+    #         if len(dist_in_bin[vv]) == 0:
+    #             dist_in_bin_list = list(dist_in_bin[vv])
+    #             dist_in_bin[vv] = np.zeros(len(dist_in_bin[0]))
+    #     low_err_test   = np.array([np.percentile(astropy.stats.bootstrap\
+    #                     (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),16) \
+    #                     for vv in range(len(dist_in_bin))])
+    #     high_err_test  = np.array([np.percentile(astropy.stats.bootstrap\
+    #                     (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),84) \
+    #                     for vv in range(len(dist_in_bin))])
 
-        med_list    = [[] for yy in range(len(frac_vals))]
-        med_list[0] = medians
-        med_list[1] = low_err_test
-        med_list[2] = high_err_test
-        medians     = np.array(med_list)
+    #     med_list    = [[] for yy in range(len(frac_vals))]
+    #     med_list[0] = medians
+    #     med_list[1] = low_err_test
+    #     med_list[2] = high_err_test
+    #     medians     = np.array(med_list)
 
     return medians    
 
@@ -526,6 +526,10 @@ def plot_hists(mass,neigh_val,bins,dlogM,ax,col_num,plot_idx):
 #     ax.step(bins_cens, high_counts, color='lightslategray',where='mid',\
 #        alpha=0.1)
     ax.plot(bins_cens, high_counts, color='lightslategray',alpha=0.1)
+
+    res = np.array([low_counts,high_counts])
+
+    return res
 ###############################################################################
 
 def plot_eco_hists(mass,bins,dlogM,ax,col):
@@ -709,7 +713,7 @@ def plot_med_range(bin_centers,low_lim,up_lim,ax,alpha,color='gray'):
 dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density\Catalogs\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_scatter_mocks\Resolve_plk_5001_so_mvir_scatter0p3_ECO_Mocks"
 usecols  = (0,1,8,13)
 
-#scatter 1 dec
+#scatter 3 dec
 bins  = np.linspace(9.1,11.7,14)
 dlogM = (11.7-9.1)/13
 
@@ -942,8 +946,8 @@ for qq in range(len(eco_mass_dat)):
 
 eco_medians   = [[] for xx in xrange(len(eco_mass_dat))]    
 
-for jj in (range(len(eco_mass_dat))):
-    eco_medians[jj] = np.array(bin_func(eco_mass_dist,bins,(jj+1),bootstrap=True))
+# for jj in (range(len(eco_mass_dat))):
+#     eco_medians[jj] = np.array(bin_func(eco_mass_dist,bins,(jj+1),bootstrap=True))
 
 #####################################################################################
 #####################################################################################
@@ -1479,9 +1483,12 @@ ax.text(3,-7,'10/90 Cut',horizontalalignment='center')
 plt.show()
 
 
-#50/50,25/75,10/90
+#50/50,25/75,10/908
 
 ###############################################################################
+
+#need to make a loop to use with the mocks... :/ It'll happen. Tomorrow
+
 ###############################################################################
 ###############################################################################
 ###############################################################################

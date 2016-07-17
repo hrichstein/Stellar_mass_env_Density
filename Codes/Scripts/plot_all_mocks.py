@@ -232,12 +232,21 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
     bin_nums     = np.unique(digitized)
     bin_nums     = list(bin_nums)
 
-    if 14 in bin_nums:
-        bin_nums.remove(14)
-        bin_nums = np.array(bin_nums)
+    if 12 not in bin_nums:
+        bin_nums.append(12)
+    if 13 in bin_nums:
+        bin_nums.remove(13)
+    
+    bin_nums = np.array(bin_nums)
+
+    # print bin_nums
+
+    # print len(bin_nums)
     
     medians  = np.array([np.median(mass_dist.T[kk][digitized==ii]) \
                 for ii in bin_nums])
+
+    # print len(medians)
 
     if bootstrap == True:
         dist_in_bin    = np.array([(mass_dist.T[kk][digitized==ii]) \
@@ -446,7 +455,7 @@ def plot_eco_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx,only=False):
     frac_vals = np.array([2,4,10])
     y_vals_2 = y_vals[0][frac_vals[hh]]
     ax.errorbar(bin_centers,y_vals_2,yerr=y_vals[1][hh],\
-                color='deeppink',linewidth=2)
+                color='red',linewidth=2)
 
 #######################################################################################
 
@@ -538,7 +547,7 @@ def plot_eco_hists(mass,bins,dlogM,ax,col):
     frac_mass_2       = mass[-frac_data:]
     counts_2, edges_2 = np.histogram(frac_mass_2,bins)
     ax.step(bins_cens, (counts_2/float(len(frac_mass_2))/dlogM), \
-            color='deeppink',where='mid')
+            color='red',where='mid')
 
 ###############################################################################
 
@@ -631,7 +640,7 @@ def plot_eco_meds(bin_centers,y_vals,low_lim,up_lim,ax,plot_idx,only=False):
         if plot_idx == 4:
             ax.set_xlabel('$\log\ M_{*}$',fontsize=18)
     ax.errorbar(bin_centers,y_vals,yerr=0.1,lolims=low_lim,\
-        uplims=up_lim,color='deeppink')
+        uplims=up_lim,color='red')
 
 ##############################################################################
 
@@ -697,11 +706,12 @@ def plot_med_range(bin_centers,low_lim,up_lim,ax,alpha,color='gray'):
 ##############################################################################
 ##############################################################################
 
-dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density\Catalogs\Resolve_plk_5001_so_mvir_hod1_Hannah_newdens_ECO_Mocks\Resolve_plk_5001_so_mvir_hod1_Hannah_newdens_ECO_Mocks"
+dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density\Catalogs\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_scatter_mocks\Resolve_plk_5001_so_mvir_scatter0p1_ECO_Mocks"
 usecols  = (0,1,8,13)
 
-bins  = np.linspace(9.1,11.9,15)
-dlogM = (11.9-9.1)/14
+#scatter 1 dec
+bins  = np.linspace(9.1,11.7,14)
+dlogM = (11.7-9.1)/13
 
 ##############################################################################
 ##############################################################################
@@ -713,6 +723,10 @@ names    = ['ra','dec','cz','logMstar']
 PD       = [(pd.read_csv(ECO_cats[ii],sep="\s+", usecols= usecols,header=None,\
                    skiprows=2,names=names)) for ii in range(len(ECO_cats))]
 PD_comp  = [(PD[ii][PD[ii].logMstar >= 9.1]) for ii in range(len(ECO_cats))]
+
+for ii in range(len(PD_comp)):
+    print max(PD_comp[ii].logMstar)
+    print min(PD_comp[ii].logMstar)
 
 ra_arr   = np.array([(np.array(PD_comp[ii])).T[0] for ii in range(len(PD_comp))])
 dec_arr  = np.array([(np.array(PD_comp[ii])).T[1] for ii in range(len(PD_comp))])
@@ -751,7 +765,8 @@ sats_num  = np.array([(len(SF_PD_comp[ii][SF_PD_comp[ii].cent_sat_flag==0])) \
 cents_num = np.array([(len(SF_PD_comp[ii][SF_PD_comp[ii].cent_sat_flag==1])) \
             for ii in range(len(SF_PD_comp))])
 gal_tot   = np.array([(len(SF_PD_comp[ii])) for ii in range(len(SF_PD_comp))])
-# print sats_num/gal_tot
+
+print 'SAT_FRAC = {0}'.format(sats_num/gal_tot)
 
 ###################################################################################
 
@@ -797,6 +812,10 @@ for ii in range(len(neigh_vals)):
     for jj in range(len(nn_mass_dist)):
         med_plot_arr[ii][jj] = all_mock_meds[jj][ii]    
 
+for ii in range(len(neigh_vals)):
+    for jj in range(len(nn_mass_dist)):
+        print len(all_mock_meds[jj][ii])
+
 mass_freq_plot  = (np.array(mass_freq))
 max_lim = [[] for xx in range(len(mass_freq_plot.T))]
 min_lim = [[] for xx in range(len(mass_freq_plot.T))]
@@ -813,12 +832,24 @@ for ii in xrange(len(nn_mass_dist)):
     sorting_test  = np.digitize(nn_mass_dist[ii].T[0],bins)
     bin_nums      = np.unique(sorting_test)
     bin_nums_list = list(bin_nums)
-    if 15 in bin_nums_list:
-        bin_nums_list.remove(15)
+    if 13 not in bin_nums:
+        bin_nums_list.append(13)
+        bin_nums = np.array(bin_nums_list)
+    if 14 in bin_nums_list:
+        bin_nums_list.remove(14)
         bin_nums  = np.array(bin_nums_list)
     for jj in xrange(1,len(nn_mass_dist[ii].T)):
         for hh in bin_nums:
             dist_cont[jj-1][ii][hh-1] = (nn_mass_dist[ii].T[jj][sorting_test==hh])
+            if len(dist_cont[jj-1][ii][hh-1]) == 0:
+                (dist_cont[jj-1][ii][hh-1]) = list(dist_cont[jj-1][ii][hh-1])
+                (dist_cont[jj-1][ii][hh-1]).append(np.zeros(13))
+                (dist_cont[jj-1][ii][hh-1]) = np.array((dist_cont[jj-1][ii][hh-1]))
+
+# for ii in xrange(len(nn_mass_dist)):
+#     for jj in xrange(1,len(nn_mass_dist[ii].T)):
+#         for hh in bin_nums:
+#             print len(dist_cont[jj-1][ii][hh-1])           
 
 ###################################################################################
 top_68 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
@@ -927,7 +958,7 @@ ax.tick_params(axis='both', labelsize=14)
 for ii in range(len(mass_freq)):
     ax.plot(bin_centers,mass_freq[ii],color='silver')
     ax.fill_between(bin_centers,max_lim,min_lim,color='silver',alpha=0.1)
-ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='deeppink',\
+ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='red',\
             linewidth=2,label='ECO')
 ax.legend(loc='best')
 
@@ -1002,6 +1033,7 @@ for nn in range(len(med_plot_arr)):
         med_str  = '{0}'.format(nn)
         yy_arr   = med_plot_arr[nn][ii]
         n_y_elem = len(yy_arr)
+        print n_y_elem
         if ii == 0:
             yy_tot = np.zeros((n_y_elem,1))
         yy_tot = np.insert(yy_tot,len(yy_tot.T),yy_arr,1)
@@ -1224,7 +1256,7 @@ for ii in range(len(mass_freq)+1):
     ax.set_yticks([10**-2,10**-1,10**0])
     ax.plot(bin_centers,schech_vals,label='Schechter',color='silver')
     if ii == 8:
-        ax.errorbar(bin_centers,ydata,yerr=eco_freq[1],color='deeppink',\
+        ax.errorbar(bin_centers,ydata,yerr=eco_freq[1],color='red',\
             label='ECO')
     else:
         ax.plot(bin_centers,ydata,label='Mock',color='darkorchid')
@@ -1251,11 +1283,11 @@ for jj in range(len(neigh_vals)):
 
 ###############################################################################
 
-fig,ax = plt.subplots()
+# fig,ax = plt.subplots()
 
-ax.set_yscale('log')
-ax.plot(bin_centers,eco_low[1][2])
-plt.show()
+# ax.set_yscale('log')
+# ax.plot(bin_centers,eco_low[1][2])
+# plt.show()
 
 ###############################################################################
 
@@ -1292,16 +1324,16 @@ def param_finder(hist_counts,bin_centers):
 ###############################################################################
 ###Test that param_finder is working
 
-opt_v,test_arr = param_finder(eco_low[1][2],bin_centers)
-schech_vals    = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
-                    opt_v[2])
+# opt_v,test_arr = param_finder(eco_low[1][2],bin_centers)
+# schech_vals    = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
+#                     opt_v[2])
 
-fig,ax = plt.subplots()
+# fig,ax = plt.subplots()
 
-ax.set_yscale('log')
-ax.plot(bin_centers,eco_low[1][2])
-ax.plot(bin_centers,schech_vals)
-plt.show()
+# ax.set_yscale('log')
+# ax.plot(bin_centers,eco_low[1][2])
+# ax.plot(bin_centers,schech_vals)
+# plt.show()
 
 ###############################################################################
 ##Creating dictionaries through for loops to house the parameters for each of

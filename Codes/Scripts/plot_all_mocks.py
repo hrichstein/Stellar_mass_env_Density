@@ -1347,9 +1347,15 @@ def param_finder(hist_counts,bin_centers):
 ###############################################################################
 ###Test that param_finder is working
 
-# opt_v,test_arr = param_finder(eco_low[1][2],bin_centers)
-# schech_vals    = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
-#                     opt_v[2])
+opt_v,test_arr = param_finder(eco_low[1][2],bin_centers,eco_low[1])
+schech_vals    = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
+                    opt_v[2])
+
+####THE error isn't working. Stops after 800 iterations.
+
+# opt_v,est_v = optimize.curve_fit(schechter_log_func,10**bin_centers,
+#     eco_low[1][2],p0 = (1,-1.05,10**10.64),sigma=eco_low[1]['low_err'][0],\
+#     absolute_sigma=True)
 
 # fig,ax = plt.subplots()
 
@@ -1399,7 +1405,7 @@ for dd in neigh_vals:
         temp_list_logMstar.append(param_dict_low[dd][low_idx[ff]][1])
     for ff in range(len(high_idx)):
         temp_list_alpha.append(param_dict_high[dd][high_idx[ff]][0])
-        temp_list_logMstar.append(param_dict_low[dd][low_idx[ff]][1])
+        temp_list_logMstar.append(param_dict_high[dd][high_idx[ff]][1])
     over_alpha_dict[dd] = temp_list_alpha
     over_log_m_star[dd] = temp_list_logMstar
 
@@ -1445,6 +1451,7 @@ for dd in neigh_vals:
         diff_dict_m_star[dd][jj] = {}
         temp_list_diff_m_star.append((param_dict_high[dd][jj][1] - \
             param_dict_low[dd][jj][1]))
+
         temp_list_diff_alpha.append(((param_dict_high[dd][jj][0]-\
             param_dict_low[dd][jj][0])/param_dict_high[dd][jj][0] * 100))
         diff_dict_alpha[dd][jj]  = np.array(temp_list_diff_alpha)
@@ -1529,9 +1536,183 @@ for rr in xrange(len(hist_high_info)):
             mocks_low_logMstar[rr][ss][tt]  = temp_res_low[1]
 
 ###############################################################################
+
+def deciles(mass):
+    tenth_val     =  int(len(mass)/10)
+    res_list      =  [[] for bb in range(10)]
+
+    for aa in range(0,10):
+        if aa == 9:
+            res_list[aa] = mass[aa*tenth_val:]
+        else:
+            res_list[aa] = mass[aa*tenth_val:(aa+1)*tenth_val]
+
+    return res_list
+
 ###############################################################################
+eco_tenths = {}
+for cc in range(len(eco_mass_dat)):
+    eco_tenths[neigh_vals[cc]] = deciles(eco_mass_dat[cc])
+
+# for ii in range(len(eco_tenths[1])):
+#     print len(eco_tenths[1][ii])   
+
+
+def perc_calcs(mass,bins,dlogM):
+    mass_counts, edges = np.histogram(mass,bins)
+    mass_freq          = mass_counts/float(len(mass))/dlogM
+
+    return mass_freq
+
+
+eco_tenths_smf = {}
+
+for ss in neigh_vals:
+    eco_tenths_smf[ss] = {}
+    for tt in range(len(eco_tenths[ss])):
+        eco_tenths_smf[ss][tt] = perc_calcs(eco_tenths[ss][tt],bins,dlogM)
+
+eco_tenths_alpha    = {}
+eco_tenths_logMstar = {}
+
+for oo in neigh_vals:
+    eco_tenths_alpha[oo]    = []
+    eco_tenths_logMstar[oo] = []
+    for pp in range(len(eco_tenths[oo])):
+        opt_v, temp_res_arr = param_finder(eco_tenths_smf[oo][pp],bin_centers)
+        eco_tenths_alpha[oo].append(temp_res_arr[0])
+        eco_tenths_logMstar[oo].append(temp_res_arr[1])
+
+
+ 
+        
+
+
+ten_x = range(1,11)
+fig,ax = plt.subplots()
+for ii in neigh_vals:
+    ax.plot(ten_x,eco_tenths_alpha[ii])
+ax.set_xlim(0,11)
+plt.show()
+
 ###############################################################################
+
+def quartiles(mass):
+    tenth_val     =  int(len(mass)/4)
+    res_list      =  [[] for bb in range(4)]
+
+    for aa in range(0,4):
+        if aa == 3:
+            res_list[aa] = mass[aa*tenth_val:]
+        else:
+            res_list[aa] = mass[aa*tenth_val:(aa+1)*tenth_val]
+
+    return res_list
+
+
+eco_quarts = {}
+for cc in range(len(eco_mass_dat)):
+    eco_quarts[neigh_vals[cc]] = quartiles(eco_mass_dat[cc])
+
+eco_quarts_smf = {}
+
+for ss in neigh_vals:
+    eco_quarts_smf[ss] = {}
+    for tt in range(len(eco_quarts[ss])):
+        eco_quarts_smf[ss][tt] = perc_calcs(eco_quarts[ss][tt],bins,dlogM)
+
+eco_quarts_alpha    = {}
+eco_quarts_logMstar = {}
+
+for oo in neigh_vals:
+    eco_quarts_alpha[oo]    = []
+    eco_quarts_logMstar[oo] = []
+    for pp in range(len(eco_quarts[oo])):
+        opt_v, temp_res_arr = param_finder(eco_quarts_smf[oo][pp],bin_centers)
+        eco_quarts_alpha[oo].append(temp_res_arr[0])
+        eco_quarts_logMstar[oo].append(temp_res_arr[1])
+
+quart_x = range(1,5)
+fig,ax = plt.subplots()
+for ii in neigh_vals:
+    ax.plot(quart_x,eco_quarts_alpha[ii])
+ax.set_xlim(0,5)
+plt.show()        
+
+
+def plot_quartiles(quart_num,y_vals,ax,plot_idx,only=False,logMstar=False):
+    if only == True:
+        titles = [1,2,3,5,10,20]
+        ax.set_xlim(0,5)
+        if logMstar == True:
+            ax.set_ylim(10,12)
+            ax.set_yticks(np.arange(10,12,0.5))
+        else:
+            ax.set_ylim(-1.2,-1.)
+            ax.set_yticks(np.arange(-1.2,-1.,0.04))
+        ax.set_xticks(range(1,5))
+        title_here = 'n = {0}'.format(titles[plot_idx])
+        ax.text(0.05, 0.95, title_here,horizontalalignment='left',\
+                verticalalignment='top',transform=ax.transAxes,fontsize=18)
+        if plot_idx == 4:
+            ax.set_xlabel('Quartiles',fontsize=18)
+    ax.plot(quart_num,y_vals,marker='o',linestyle='--')
+
+nrow_num_mass = int(2)
+ncol_num_mass = int(3)
+
+fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
+        figsize=(100,200), sharex= True, sharey = True)
+axes_flat = axes.flatten()
+
+zz = int(0)
+while zz <=5:    
+    ii = neigh_vals[zz]
+    plot_quartiles(quart_x,eco_quarts_logMstar[ii],axes_flat[zz],zz,only=True,\
+        logMstar=True)
+    zz   += 1
+        
+plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
+            hspace=0,wspace=0)
+plt.show()
 ###############################################################################
+
+def plot_deciles(dec_num,y_vals,ax,plot_idx,only=False,logMstar=False):
+    if only == True:
+        titles = [1,2,3,5,10,20]
+        ax.set_xlim(0,11)
+        if logMstar == True:
+            ax.set_ylim(10,12)
+            ax.set_yticks(np.arange(10,12,0.5))
+        else:    
+            ax.set_ylim(-1.25,-1.)
+            ax.set_yticks(np.arange(-1.25,-1.,0.05))
+        ax.set_xticks(range(1,11))
+        title_here = 'n = {0}'.format(titles[plot_idx])
+        ax.text(0.05, 0.95, title_here,horizontalalignment='left',\
+                verticalalignment='top',transform=ax.transAxes,fontsize=18)
+        if plot_idx == 4:
+            ax.set_xlabel('Decile',fontsize=18)
+    ax.plot(dec_num,y_vals,marker='o',linestyle='--')
+
+nrow_num_mass = int(2)
+ncol_num_mass = int(3)
+
+fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
+        figsize=(100,200), sharex= True, sharey = True)
+axes_flat = axes.flatten()
+
+zz = int(0)
+while zz <=5:    
+    ii = neigh_vals[zz]
+    plot_deciles(ten_x,eco_tenths_logMstar[ii],axes_flat[zz],zz,only=True,\
+        logMstar=True)
+    zz   += 1
+        
+plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
+            hspace=0,wspace=0)
+plt.show()
+
 ###############################################################################
 ###############################################################################
 ###############################################################################

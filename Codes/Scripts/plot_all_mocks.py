@@ -1248,7 +1248,6 @@ def schechter_log_func(stellar_mass,phi_star,alpha,m_star):
 
 ###############################################################################
 
-
 xdata = 10**bin_centers
 p0    = (1,-1.05,10**10.64)
 param_arr = [[] for ii in range(len(mass_freq)+1)]
@@ -1364,176 +1363,13 @@ schech_vals    = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
 # ax.plot(bin_centers,schech_vals)
 # plt.show()
 
-###############################################################################
-##Creating dictionaries through for loops to house the parameters for each of
-#ECO's 18 different options (6 nn and 3 density cuts)
-
-#One dictionary for the lower portion of the cuts and one for the higher
-
-param_dict_low  = {}
-param_dict_high = {}
-
-
-for dd in neigh_vals:
-    param_dict_low[dd]  = {}
-    param_dict_high[dd] = {}
-    for ee in frac_vals:
-        param_dict_low[dd][ee]  = {}
-        param_dict_high[dd][ee] = {}
-        opt_v, param_dict_low[dd][ee]  = param_finder(eco_low[dd][ee],\
-            bin_centers)
-        opt_v, param_dict_high[dd][ee] = param_finder(eco_high[dd][ee],\
-            bin_centers)
-
-#### Putting the percentile cuts in order, as seen below
-
-#10,25,low_50,high_50,75,90
-
-over_alpha_dict = {}
-over_log_m_star = {}
-for dd in neigh_vals:
-    temp_list_alpha     = []
-    temp_list_logMstar  = []
-    over_alpha_dict[dd] = {}
-    over_log_m_star[dd] = {}
-
-    low_idx  = np.array(list(reversed(np.sort(param_dict_low[dd].keys()))))
-    high_idx = np.sort(param_dict_high[dd].keys())
-
-    for ff in range(len(low_idx)):
-        temp_list_alpha.append(param_dict_low[dd][low_idx[ff]][0])
-        temp_list_logMstar.append(param_dict_low[dd][low_idx[ff]][1])
-    for ff in range(len(high_idx)):
-        temp_list_alpha.append(param_dict_high[dd][high_idx[ff]][0])
-        temp_list_logMstar.append(param_dict_high[dd][high_idx[ff]][1])
-    over_alpha_dict[dd] = temp_list_alpha
-    over_log_m_star[dd] = temp_list_logMstar
-
-perc_arr = (10,25,49,51,75,90)
-
-
-fig,ax   = plt.subplots()
-for jj in neigh_vals:
-    ax.plot(perc_arr,over_log_m_star[jj],marker='o',label='{0}'.format(jj), \
-        linestyle='--')
-ax.set_xlim([0,100])
-ax.legend(loc='best', numpoints=1)
-ax.set_xlabel('Percentile')
-ax.set_ylabel(r'$\log\ M_{*}$')
-plt.show()
-
-
-fig,ax  = plt.subplots()
-for jj in neigh_vals:
-    ax.plot(perc_arr,over_alpha_dict[jj],marker='o',label='{0}'.format(jj), \
-        linestyle='--')
-ax.set_xlim([0,100])
-ax.legend(loc='best', numpoints=1)
-ax.set_xlabel('Percentile')
-ax.set_ylabel(r'$\alpha$')
-plt.show()
-
 
 ###############################################################################
-### moving around the parameters so that I can find the differences, rather 
-#than just plotting them straigh-up
+def perc_calcs(mass,bins,dlogM):
+    mass_counts, edges = np.histogram(mass,bins)
+    mass_freq          = mass_counts/float(len(mass))/dlogM
 
-diff_dict_m_star = {}
-diff_dict_alpha  = {}
-
-for dd in neigh_vals:
-    diff_dict_m_star[dd] = {}
-    diff_dict_alpha[dd]  = {}
-    for jj in frac_vals:
-        temp_list_diff_m_star    = []
-        temp_list_diff_alpha     = []
-        diff_dict_alpha[dd][jj]  = {}
-        diff_dict_m_star[dd][jj] = {}
-        temp_list_diff_m_star.append((param_dict_high[dd][jj][1] - \
-            param_dict_low[dd][jj][1]))
-
-        temp_list_diff_alpha.append(((param_dict_high[dd][jj][0]-\
-            param_dict_low[dd][jj][0])/param_dict_high[dd][jj][0] * 100))
-        diff_dict_alpha[dd][jj]  = np.array(temp_list_diff_alpha)
-        diff_dict_m_star[dd][jj] = np.array(temp_list_diff_m_star)
-
-
-dict_revamp_mstar         = {}
-for dd in neigh_vals:
-    dict_revamp_mstar[dd] = []
-    for jj in frac_vals:
-        dict_revamp_mstar[dd].append(diff_dict_m_star[dd][jj])
-
-dict_revamp_alpha         = {}
-for dd in neigh_vals:
-    dict_revamp_alpha[dd] = []
-    for jj in frac_vals:
-        dict_revamp_alpha[dd].append(diff_dict_alpha[dd][jj])
-
-
-discrete_x = np.array([1,2,3])
-
-fig,ax     = plt.subplots()
-
-for ii in neigh_vals:
-    ax.plot(discrete_x,dict_revamp_mstar[ii],marker='o',\
-        linestyle= '--',label='{0}'.format(ii))
-ax.set_xlim(0,4)        
-ax.set_xlabel('Fractional Cut',fontsize=18)
-ax.set_xticks([1,2,3])
-ax.set_ylabel('Difference in $\log\ M_{*}$, h-l',fontsize=18)
-ax.legend(loc='best',numpoints=1)
-ax.text(1,0.5,'50/50 Cut',horizontalalignment='center')
-ax.text(2,0.6,'25/75 Cut',horizontalalignment='center')
-ax.text(3,0.75,'10/90 Cut',horizontalalignment='center')
-plt.show()
-
-######
-
-fig,ax = plt.subplots()
-
-for ii in neigh_vals:
-    ax.plot(discrete_x,dict_revamp_alpha[ii],marker='o',\
-        linestyle= '--',label='{0}'.format(ii))
-ax.set_xlim(0,4)        
-ax.set_xlabel('Fractional Cut',fontsize=18)
-ax.set_xticks([1,2,3])
-ax.set_ylabel(r'Difference in $\alpha$, (h-l)/h',fontsize=18)
-ax.legend(loc='best',numpoints=1)
-ax.text(1,-7,'50/50 Cut',horizontalalignment='center')
-ax.text(2,-7,'25/75 Cut',horizontalalignment='center')
-ax.text(3,-7,'10/90 Cut',horizontalalignment='center')
-plt.show()
-
-
-#50/50,25/75,10/908
-
-###############################################################################
-
-mocks_high_alpha    = {}
-mocks_high_logMstar = {}
-mocks_low_alpha     = {}
-mocks_low_logMstar  = {}
-
-for rr in xrange(len(hist_high_info)):
-    mocks_high_alpha[rr]    = {}
-    mocks_high_logMstar[rr] = {}
-    mocks_low_alpha[rr]     = {}
-    mocks_low_logMstar[rr]  = {}
-    for ss in neigh_vals:
-        mocks_high_alpha[rr][ss]    = {}        
-        mocks_high_logMstar[rr][ss] = {}
-        mocks_low_alpha[rr][ss]     = {}        
-        mocks_low_logMstar[rr][ss]  = {}
-        for tt in frac_vals:
-            opt_v, temp_res_high = param_finder(hist_high_info[rr][ss][tt],\
-                                bin_centers)
-            opt_v, temp_res_low  = param_finder(hist_low_info[rr][ss][tt],\
-                                bin_centers)
-            mocks_high_alpha[rr][ss][tt]    = temp_res_high[0]        
-            mocks_high_logMstar[rr][ss][tt] = temp_res_high[1]
-            mocks_low_alpha[rr][ss][tt]     = temp_res_low[0]        
-            mocks_low_logMstar[rr][ss][tt]  = temp_res_low[1]
+    return mass_freq
 
 ###############################################################################
 
@@ -1556,15 +1392,6 @@ for cc in range(len(eco_mass_dat)):
 
 # for ii in range(len(eco_tenths[1])):
 #     print len(eco_tenths[1][ii])   
-
-
-def perc_calcs(mass,bins,dlogM):
-    mass_counts, edges = np.histogram(mass,bins)
-    mass_freq          = mass_counts/float(len(mass))/dlogM
-
-    return mass_freq
-
-
 eco_tenths_smf = {}
 
 for ss in neigh_vals:
@@ -1583,16 +1410,54 @@ for oo in neigh_vals:
         eco_tenths_alpha[oo].append(temp_res_arr[0])
         eco_tenths_logMstar[oo].append(temp_res_arr[1])
 
-
- 
-        
-
-
 ten_x = range(1,11)
-fig,ax = plt.subplots()
-for ii in neigh_vals:
-    ax.plot(ten_x,eco_tenths_alpha[ii])
-ax.set_xlim(0,11)
+# fig,ax = plt.subplots()
+# for ii in neigh_vals:
+#     ax.plot(ten_x,eco_tenths_alpha[ii])
+# ax.set_xlim(0,11)
+# plt.show()
+
+###############################################################################
+
+def plot_deciles(dec_num,y_vals,ax,plot_idx,eco=False,logMstar=False,color='gray'):
+    if eco == True:
+        titles = [1,2,3,5,10,20]
+        ax.set_xlim(0,11)
+        if logMstar == True:
+            ax.set_ylim(10,12)
+            ax.set_yticks(np.arange(10,12,0.5))
+        else:    
+            ax.set_ylim(-1.25,-1.)
+            ax.set_yticks(np.arange(-1.25,-1.,0.05))
+        ax.set_xticks(range(1,11))
+        title_here = 'n = {0}'.format(titles[plot_idx])
+        ax.text(0.05, 0.95, title_here,horizontalalignment='left',\
+                verticalalignment='top',transform=ax.transAxes,fontsize=18)
+        if plot_idx == 4:
+            ax.set_xlabel('Decile',fontsize=18)
+    if eco == True:
+        ax.plot(dec_num,y_vals,marker='o',linestyle='--',color=color)
+    else:
+        ax.plot(dec_num,y_vals,linestyle='--',color=color)
+
+###############################################################################
+
+nrow_num_mass = int(2)
+ncol_num_mass = int(3)
+
+fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
+        figsize=(100,200), sharex= True, sharey = True)
+axes_flat = axes.flatten()
+
+zz = int(0)
+while zz <=5:    
+    ii = neigh_vals[zz]
+    plot_deciles(ten_x,eco_tenths_logMstar[ii],axes_flat[zz],zz,only=True,\
+        logMstar=True)
+    zz   += 1
+        
+plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
+            hspace=0,wspace=0)
 plt.show()
 
 ###############################################################################
@@ -1609,6 +1474,7 @@ def quartiles(mass):
 
     return res_list
 
+###############################################################################
 
 eco_quarts = {}
 for cc in range(len(eco_mass_dat)):
@@ -1633,15 +1499,16 @@ for oo in neigh_vals:
         eco_quarts_logMstar[oo].append(temp_res_arr[1])
 
 quart_x = range(1,5)
-fig,ax = plt.subplots()
-for ii in neigh_vals:
-    ax.plot(quart_x,eco_quarts_alpha[ii])
-ax.set_xlim(0,5)
-plt.show()        
+# fig,ax = plt.subplots()
+# for ii in neigh_vals:
+#     ax.plot(quart_x,eco_quarts_alpha[ii])
+# ax.set_xlim(0,5)
+# plt.show()        
 
+###############################################################################
 
-def plot_quartiles(quart_num,y_vals,ax,plot_idx,only=False,logMstar=False):
-    if only == True:
+def plot_quartiles(quart_num,y_vals,ax,plot_idx,eco=False,logMstar=False,color='gray'):
+    if eco == True:
         titles = [1,2,3,5,10,20]
         ax.set_xlim(0,5)
         if logMstar == True:
@@ -1656,7 +1523,12 @@ def plot_quartiles(quart_num,y_vals,ax,plot_idx,only=False,logMstar=False):
                 verticalalignment='top',transform=ax.transAxes,fontsize=18)
         if plot_idx == 4:
             ax.set_xlabel('Quartiles',fontsize=18)
-    ax.plot(quart_num,y_vals,marker='o',linestyle='--')
+    if eco == True:
+        ax.plot(quart_num,y_vals,marker='o',linestyle='--',color=color)
+    else:
+        ax.plot(quart_num,y_vals,linestyle='--',color=color)
+
+###############################################################################    
 
 nrow_num_mass = int(2)
 ncol_num_mass = int(3)
@@ -1676,24 +1548,73 @@ plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
             hspace=0,wspace=0)
 plt.show()
 ###############################################################################
+def quart_finder(mass,bins,dlogM,neigh_vals):
+    quarts = {}
+    for ii in neigh_vals:
+        quarts[ii] = quartiles(mass[ii])
 
-def plot_deciles(dec_num,y_vals,ax,plot_idx,only=False,logMstar=False):
-    if only == True:
-        titles = [1,2,3,5,10,20]
-        ax.set_xlim(0,11)
-        if logMstar == True:
-            ax.set_ylim(10,12)
-            ax.set_yticks(np.arange(10,12,0.5))
-        else:    
-            ax.set_ylim(-1.25,-1.)
-            ax.set_yticks(np.arange(-1.25,-1.,0.05))
-        ax.set_xticks(range(1,11))
-        title_here = 'n = {0}'.format(titles[plot_idx])
-        ax.text(0.05, 0.95, title_here,horizontalalignment='left',\
-                verticalalignment='top',transform=ax.transAxes,fontsize=18)
-        if plot_idx == 4:
-            ax.set_xlabel('Decile',fontsize=18)
-    ax.plot(dec_num,y_vals,marker='o',linestyle='--')
+    quarts_smf = {}
+
+    for ss in neigh_vals:
+        quarts_smf[ss] = {}
+        for tt in range(len(quarts[ss])):
+            quarts_smf[ss][tt] = perc_calcs(quarts[ss][tt],bins,dlogM)
+
+    quarts_alpha    = {}
+    quarts_logMstar = {}
+
+    for oo in neigh_vals:
+        quarts_alpha[oo]    = []
+        quarts_logMstar[oo] = []
+        for pp in range(len(quarts[oo])):
+            opt_v, temp_res_arr = param_finder(quarts_smf[oo][pp],bin_centers)
+            quarts_alpha[oo].append(temp_res_arr[0])
+            quarts_logMstar[oo].append(temp_res_arr[1])
+
+    return quarts_alpha, quarts_logMstar
+###############################################################################
+mock_quart_alpha_dict = {}
+mock_quart_logMstar_dict = {}
+
+for jj in range(len(mass_dat)):
+    mock_quart_alpha_dict[jj], mock_quart_logMstar_dict[jj] = quart_finder\
+                                    (mass_dat[jj],bins,dlogM,neigh_vals)
+
+###############################################################################
+def tenth_finder(mass,bins,dlogM,neigh_vals):
+    tenths = {}
+    for ii in neigh_vals:
+        tenths[ii] = deciles(mass[ii])
+
+    tenths_smf = {}
+
+    for ss in neigh_vals:
+        tenths_smf[ss] = {}
+        for tt in range(len(tenths[ss])):
+            tenths_smf[ss][tt] = perc_calcs(tenths[ss][tt],bins,dlogM)
+
+    tenths_alpha    = {}
+    tenths_logMstar = {}
+
+    for oo in neigh_vals:
+        tenths_alpha[oo]    = []
+        tenths_logMstar[oo] = []
+        for pp in range(len(tenths[oo])):
+            opt_v, temp_res_arr = param_finder(tenths_smf[oo][pp],bin_centers)
+            tenths_alpha[oo].append(temp_res_arr[0])
+            tenths_logMstar[oo].append(temp_res_arr[1])
+
+    return tenths_alpha, tenths_logMstar
+###############################################################################
+
+mock_dec_alpha_dict = {}
+mock_dec_logMstar_dict = {}
+
+for jj in range(len(mass_dat)):
+    mock_dec_alpha_dict[jj], mock_dec_logMstar_dict[jj] = tenth_finder\
+                                    (mass_dat[jj],bins,dlogM,neigh_vals)
+
+###############################################################################
 
 nrow_num_mass = int(2)
 ncol_num_mass = int(3)
@@ -1703,15 +1624,44 @@ fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
 axes_flat = axes.flatten()
 
 zz = int(0)
-while zz <=5:    
+while zz <=5:   
     ii = neigh_vals[zz]
-    plot_deciles(ten_x,eco_tenths_logMstar[ii],axes_flat[zz],zz,only=True,\
-        logMstar=True)
+    for ff in range(len(mass_dat)):
+        plot_quartiles(quart_x,mock_quart_logMstar_dict[ff][ii],axes_flat[zz],zz,\
+            logMstar=True)
+    plot_quartiles(quart_x,eco_quarts_logMstar[ii],axes_flat[zz],zz,\
+        logMstar=True,color='limegreen',eco=True)
     zz   += 1
         
 plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
             hspace=0,wspace=0)
 plt.show()
+
+
+###############################################################################
+
+
+nrow_num_mass = int(2)
+ncol_num_mass = int(3)
+
+fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
+        figsize=(100,200), sharex= True, sharey = True)
+axes_flat = axes.flatten()
+
+zz = int(0)
+while zz <=5:   
+    ii = neigh_vals[zz]
+    for ff in range(len(mass_dat)):
+        plot_deciles(ten_x,mock_dec_logMstar_dict[ff][ii],axes_flat[zz],zz,\
+            logMstar=True)
+    plot_deciles(ten_x,eco_tenths_logMstar[ii],axes_flat[zz],zz,\
+        logMstar=True,color='limegreen',eco=True)
+    zz   += 1
+        
+plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
+            hspace=0,wspace=0)
+plt.show()
+
 
 ###############################################################################
 ###############################################################################
@@ -1745,7 +1695,173 @@ plt.show()
 ###############################################################################
 ###############################################################################
 ###############################################################################
+
+
 ###############################################################################
-###############################################################################
-###############################################################################
-###############################################################################
+##Creating dictionaries through for loops to house the parameters for each of
+#ECO's 18 different options (6 nn and 3 density cuts)
+
+#One dictionary for the lower portion of the cuts and one for the higher
+
+# param_dict_low  = {}
+# param_dict_high = {}
+
+
+# for dd in neigh_vals:
+#     param_dict_low[dd]  = {}
+#     param_dict_high[dd] = {}
+#     for ee in frac_vals:
+#         param_dict_low[dd][ee]  = {}
+#         param_dict_high[dd][ee] = {}
+#         opt_v, param_dict_low[dd][ee]  = param_finder(eco_low[dd][ee],\
+#             bin_centers)
+#         opt_v, param_dict_high[dd][ee] = param_finder(eco_high[dd][ee],\
+#             bin_centers)
+
+# #### Putting the percentile cuts in order, as seen below
+
+# #10,25,low_50,high_50,75,90
+
+# over_alpha_dict = {}
+# over_log_m_star = {}
+# for dd in neigh_vals:
+#     temp_list_alpha     = []
+#     temp_list_logMstar  = []
+#     over_alpha_dict[dd] = {}
+#     over_log_m_star[dd] = {}
+
+#     low_idx  = np.array(list(reversed(np.sort(param_dict_low[dd].keys()))))
+#     high_idx = np.sort(param_dict_high[dd].keys())
+
+#     for ff in range(len(low_idx)):
+#         temp_list_alpha.append(param_dict_low[dd][low_idx[ff]][0])
+#         temp_list_logMstar.append(param_dict_low[dd][low_idx[ff]][1])
+#     for ff in range(len(high_idx)):
+#         temp_list_alpha.append(param_dict_high[dd][high_idx[ff]][0])
+#         temp_list_logMstar.append(param_dict_high[dd][high_idx[ff]][1])
+#     over_alpha_dict[dd] = temp_list_alpha
+#     over_log_m_star[dd] = temp_list_logMstar
+
+# perc_arr = (10,25,49,51,75,90)
+
+
+# fig,ax   = plt.subplots()
+# for jj in neigh_vals:
+#     ax.plot(perc_arr,over_log_m_star[jj],marker='o',label='{0}'.format(jj), \
+#         linestyle='--')
+# ax.set_xlim([0,100])
+# ax.legend(loc='best', numpoints=1)
+# ax.set_xlabel('Percentile')
+# ax.set_ylabel(r'$\log\ M_{*}$')
+# plt.show()
+
+
+# fig,ax  = plt.subplots()
+# for jj in neigh_vals:
+#     ax.plot(perc_arr,over_alpha_dict[jj],marker='o',label='{0}'.format(jj), \
+#         linestyle='--')
+# ax.set_xlim([0,100])
+# ax.legend(loc='best', numpoints=1)
+# ax.set_xlabel('Percentile')
+# ax.set_ylabel(r'$\alpha$')
+# plt.show()
+
+
+### moving around the parameters so that I can find the differences, rather 
+#than just plotting them straigh-up
+
+# diff_dict_m_star = {}
+# diff_dict_alpha  = {}
+
+# for dd in neigh_vals:
+#     diff_dict_m_star[dd] = {}
+#     diff_dict_alpha[dd]  = {}
+#     for jj in frac_vals:
+#         temp_list_diff_m_star    = []
+#         temp_list_diff_alpha     = []
+#         diff_dict_alpha[dd][jj]  = {}
+#         diff_dict_m_star[dd][jj] = {}
+#         temp_list_diff_m_star.append((param_dict_high[dd][jj][1] - \
+#             param_dict_low[dd][jj][1]))
+
+#         temp_list_diff_alpha.append(((param_dict_high[dd][jj][0]-\
+#             param_dict_low[dd][jj][0])/param_dict_high[dd][jj][0] * 100))
+#         diff_dict_alpha[dd][jj]  = np.array(temp_list_diff_alpha)
+#         diff_dict_m_star[dd][jj] = np.array(temp_list_diff_m_star)
+
+
+# dict_revamp_mstar         = {}
+# for dd in neigh_vals:
+#     dict_revamp_mstar[dd] = []
+#     for jj in frac_vals:
+#         dict_revamp_mstar[dd].append(diff_dict_m_star[dd][jj])
+
+# dict_revamp_alpha         = {}
+# for dd in neigh_vals:
+#     dict_revamp_alpha[dd] = []
+#     for jj in frac_vals:
+#         dict_revamp_alpha[dd].append(diff_dict_alpha[dd][jj])
+
+
+# discrete_x = np.array([1,2,3])
+
+# fig,ax     = plt.subplots()
+
+# for ii in neigh_vals:
+#     ax.plot(discrete_x,dict_revamp_mstar[ii],marker='o',\
+#         linestyle= '--',label='{0}'.format(ii))
+# ax.set_xlim(0,4)        
+# ax.set_xlabel('Fractional Cut',fontsize=18)
+# ax.set_xticks([1,2,3])
+# ax.set_ylabel('Difference in $\log\ M_{*}$, h-l',fontsize=18)
+# ax.legend(loc='best',numpoints=1)
+# ax.text(1,0.5,'50/50 Cut',horizontalalignment='center')
+# ax.text(2,0.6,'25/75 Cut',horizontalalignment='center')
+# ax.text(3,0.75,'10/90 Cut',horizontalalignment='center')
+# plt.show()
+
+# ######
+
+# fig,ax = plt.subplots()
+
+# for ii in neigh_vals:
+#     ax.plot(discrete_x,dict_revamp_alpha[ii],marker='o',\
+#         linestyle= '--',label='{0}'.format(ii))
+# ax.set_xlim(0,4)        
+# ax.set_xlabel('Fractional Cut',fontsize=18)
+# ax.set_xticks([1,2,3])
+# ax.set_ylabel(r'Difference in $\alpha$, (h-l)/h',fontsize=18)
+# ax.legend(loc='best',numpoints=1)
+# ax.text(1,-7,'50/50 Cut',horizontalalignment='center')
+# ax.text(2,-7,'25/75 Cut',horizontalalignment='center')
+# ax.text(3,-7,'10/90 Cut',horizontalalignment='center')
+# plt.show()
+
+
+#50/50,25/75,10/908
+
+
+# mocks_high_alpha    = {}
+# mocks_high_logMstar = {}
+# mocks_low_alpha     = {}
+# mocks_low_logMstar  = {}
+
+# for rr in xrange(len(hist_high_info)):
+#     mocks_high_alpha[rr]    = {}
+#     mocks_high_logMstar[rr] = {}
+#     mocks_low_alpha[rr]     = {}
+#     mocks_low_logMstar[rr]  = {}
+#     for ss in neigh_vals:
+#         mocks_high_alpha[rr][ss]    = {}        
+#         mocks_high_logMstar[rr][ss] = {}
+#         mocks_low_alpha[rr][ss]     = {}        
+#         mocks_low_logMstar[rr][ss]  = {}
+#         for tt in frac_vals:
+#             opt_v, temp_res_high = param_finder(hist_high_info[rr][ss][tt],\
+#                                 bin_centers)
+#             opt_v, temp_res_low  = param_finder(hist_low_info[rr][ss][tt],\
+#                                 bin_centers)
+#             mocks_high_alpha[rr][ss][tt]    = temp_res_high[0]        
+#             mocks_high_logMstar[rr][ss][tt] = temp_res_high[1]
+#             mocks_low_alpha[rr][ss][tt]     = temp_res_low[0]        
+#             mocks_low_logMstar[rr][ss][tt]  = temp_res_low[1]

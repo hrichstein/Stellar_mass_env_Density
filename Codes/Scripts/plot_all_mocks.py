@@ -1,6 +1,6 @@
 from __future__ import division, absolute_import
 
-# import astropy.stats
+import astropy.stats
 import glob
 import matplotlib.pyplot as plt 
 from matplotlib import ticker
@@ -253,25 +253,25 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
 
     # print len(medians)
 
-    # if bootstrap == True:
-    #     dist_in_bin    = np.array([(mass_dist.T[kk][digitized==ii]) \
-    #             for ii in bin_nums])
-    #     for vv in range(len(dist_in_bin)):
-    #         if len(dist_in_bin[vv]) == 0:
-    #             dist_in_bin_list = list(dist_in_bin[vv])
-    #             dist_in_bin[vv] = np.zeros(len(dist_in_bin[0]))
-    #     low_err_test   = np.array([np.percentile(astropy.stats.bootstrap\
-    #                     (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),16) \
-    #                     for vv in range(len(dist_in_bin))])
-    #     high_err_test  = np.array([np.percentile(astropy.stats.bootstrap\
-    #                     (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),84) \
-    #                     for vv in range(len(dist_in_bin))])
+    if bootstrap == True:
+        dist_in_bin    = np.array([(mass_dist.T[kk][digitized==ii]) \
+                for ii in bin_nums])
+        for vv in range(len(dist_in_bin)):
+            if len(dist_in_bin[vv]) == 0:
+                dist_in_bin_list = list(dist_in_bin[vv])
+                dist_in_bin[vv] = np.zeros(len(dist_in_bin[0]))
+        low_err_test   = np.array([np.percentile(astropy.stats.bootstrap\
+                        (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),16) \
+                        for vv in range(len(dist_in_bin))])
+        high_err_test  = np.array([np.percentile(astropy.stats.bootstrap\
+                        (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),84) \
+                        for vv in range(len(dist_in_bin))])
 
-    #     med_list    = [[] for yy in range(len(frac_vals))]
-    #     med_list[0] = medians
-    #     med_list[1] = low_err_test
-    #     med_list[2] = high_err_test
-    #     medians     = np.array(med_list)
+        med_list    = [[] for yy in range(len(frac_vals))]
+        med_list[0] = medians
+        med_list[1] = low_err_test
+        med_list[2] = high_err_test
+        medians     = np.array(med_list)
 
     return medians    
 
@@ -964,8 +964,8 @@ for qq in range(len(eco_mass_dat)):
 
 eco_medians   = [[] for xx in xrange(len(eco_mass_dat))]    
 
-# for jj in (range(len(eco_mass_dat))):
-#     eco_medians[jj] = np.array(bin_func(eco_mass_dist,bins,(jj+1),bootstrap=True))
+for jj in (range(len(eco_mass_dat))):
+    eco_medians[jj] = np.array(bin_func(eco_mass_dist,bins,(jj+1),bootstrap=True))
 
 #####################################################################################
 #####################################################################################
@@ -1084,9 +1084,9 @@ while zz <=4:
                     axes_flat[zz],0.15,color='gainsboro')
                 plot_bands(bin_centers,upper_m,lower_m,axes_flat[zz])
                 plot_all_meds(bin_centers,med_plot_arr[ii][vv],axes_flat[zz],zz)
-                # plot_eco_meds(bin_centers,eco_medians[ii][0],\
-                #               eco_medians[ii][1],eco_medians[ii][2],\
-                #                                 axes_flat[zz],zz)
+                plot_eco_meds(bin_centers,eco_medians[ii][0],\
+                              eco_medians[ii][1],eco_medians[ii][2],\
+                                                axes_flat[zz],zz)
         zz   += 1
         
 plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
@@ -1103,9 +1103,8 @@ for ii in xrange(len(coords_test)):
     hist_high_info[ii] = {}
     
     for jj in range(len(neigh_vals)):
-        hist_low_info[ii][neigh_vals[jj]], \
-        hist_high_info[ii][neigh_vals[jj]] = \
-        (mass_dat[ii][neigh_vals[jj]],bins,dlogM)
+        hist_low_info[ii][neigh_vals[jj]],hist_high_info[ii][neigh_vals[jj]] \
+        = hist_calcs(mass_dat[ii][neigh_vals[jj]],bins,dlogM)
         
 frac_vals     = [2,4,10]
 hist_low_arr  = [[[] for yy in xrange(len(nn_mass_dist))] for xx in \
@@ -1452,9 +1451,6 @@ for dd in neigh_vals:
         diff_dict_m_star[dd][jj] = np.array(temp_list_diff_m_star)
 
 
-
-
-
 dict_revamp_mstar         = {}
 for dd in neigh_vals:
     dict_revamp_mstar[dd] = []
@@ -1507,7 +1503,30 @@ plt.show()
 
 ###############################################################################
 
-#need to make a loop to use with the mocks... :/ It'll happen. Tomorrow
+mocks_high_alpha    = {}
+mocks_high_logMstar = {}
+mocks_low_alpha     = {}
+mocks_low_logMstar  = {}
+
+for rr in xrange(len(hist_high_info)):
+    mocks_high_alpha[rr]    = {}
+    mocks_high_logMstar[rr] = {}
+    mocks_low_alpha[rr]     = {}
+    mocks_low_logMstar[rr]  = {}
+    for ss in neigh_vals:
+        mocks_high_alpha[rr][ss]    = {}        
+        mocks_high_logMstar[rr][ss] = {}
+        mocks_low_alpha[rr][ss]     = {}        
+        mocks_low_logMstar[rr][ss]  = {}
+        for tt in frac_vals:
+            opt_v, temp_res_high = param_finder(hist_high_info[rr][ss][tt],\
+                                bin_centers)
+            opt_v, temp_res_low  = param_finder(hist_low_info[rr][ss][tt],\
+                                bin_centers)
+            mocks_high_alpha[rr][ss][tt]    = temp_res_high[0]        
+            mocks_high_logMstar[rr][ss][tt] = temp_res_high[1]
+            mocks_low_alpha[rr][ss][tt]     = temp_res_low[0]        
+            mocks_low_logMstar[rr][ss][tt]  = temp_res_low[1]
 
 ###############################################################################
 ###############################################################################

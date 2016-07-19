@@ -9,7 +9,7 @@ from matplotlib.ticker import FormatStrFormatter
 import numpy as np 
 import os
 import pandas as pd
-from scipy import optimize,spatial
+from scipy import integrate,optimize,spatial
 
 ###############################################################################
 ###############################################################################
@@ -357,6 +357,9 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
 
     bin_nums = np.array(bin_nums_list)
 
+    mean_mass = np.array([np.mean(mass_dist.T[0][digitized==ii]) \
+                for ii in bin_nums])
+
     for ii in bin_nums:
         if len(mass_dist.T[kk][digitized==ii]) == 0:
             temp_list = list(mass_dist.T[kk]\
@@ -392,7 +395,7 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
         med_list[2] = high_err_test
         medians     = np.array(med_list)
 
-    return medians    
+    return medians  
 
 ###############################################################################
 def hist_calcs(mass,bins,dlogM,eco=False):
@@ -492,7 +495,7 @@ def plot_all_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx):
     Figure with three subplots showing appropriate ratios
     """
     if plot_idx     ==16:
-        ax.set_xlabel('$\log\ M_{*}/M_{\odot}$',fontsize=18)
+        ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=18)
     if col_num      ==0:
         title_label = 'Mass Ratio 50/50, {0} NN'.format(neigh_val)
         frac_val    = 10
@@ -554,7 +557,7 @@ def plot_eco_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx,only=False):
     """
     if only == True:
         if plot_idx     ==16:
-            ax.set_xlabel('$\log\ M_{*}/M_{\odot}$',fontsize=18)
+            ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=18)
         if col_num      ==0:
             title_label = 'Mass Ratio 50/50, {0} NN'.format(neigh_val)
             frac_val    = 10
@@ -629,7 +632,7 @@ def plot_hists(mass,neigh_val,bins,dlogM,ax,col_num,plot_idx):
         ax.text(0.05, 0.95, title_label,horizontalalignment='left',\
                 verticalalignment='top',transform=ax.transAxes,fontsize=12)
     if plot_idx == 16:
-        ax.set_xlabel('$\log\ M_{*}/M_{\odot}$',fontsize=18)                      
+        ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=18)                      
     ax.set_xlim(9.1,11.9)
     ax.set_ylim([10**-3,10**1])
     ax.set_xticks(np.arange(9.5, 12., 0.5))
@@ -722,7 +725,7 @@ def plot_all_meds(bin_centers,y_vals,ax,plot_idx):
     ax.text(0.05, 0.95, title_here,horizontalalignment='left',\
             verticalalignment='top',transform=ax.transAxes,fontsize=18)
     if plot_idx == 4:
-        ax.set_xlabel('$\log\ M_{*}/M_{\odot}$',fontsize=20)
+        ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=20)
     ax.plot(bin_centers,y_vals,color='silver')
 
 #############################################################################              
@@ -774,7 +777,7 @@ def plot_eco_meds(bin_centers,y_vals,low_lim,up_lim,ax,plot_idx,only=False):
         ax.text(0.05, 0.95, title_here,horizontalalignment='left',\
                 verticalalignment='top',transform=ax.transAxes,fontsize=18)
         if plot_idx == 4:
-            ax.set_xlabel('$\log\ M_{*}$',fontsize=18)
+            ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=18)
     ax.errorbar(bin_centers,y_vals,yerr=0.1,lolims=low_lim,\
         uplims=up_lim,color='dodgerblue',label='ECO')
     # if plot_idx == 5:
@@ -846,7 +849,7 @@ def plot_med_range(bin_centers,low_lim,up_lim,ax,alpha,color='gray'):
 
 dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
 dirpath += r"\Catalogs\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_"
-dirpath += r"scatter_mocks\Resolve_plk_5001_so_mvir_scatter0p2_ECO_Mocks"
+dirpath += r"scatter_mocks\Resolve_plk_5001_so_mvir_scatter0p1_ECO_Mocks"
 
 usecols  = (0,1,8,13)
 dlogM    = 0.2
@@ -879,7 +882,7 @@ bins = Bins_array_create(min_max_mass_arr,dlogM)
 bins+= 0.1
 bins_list = list(bins)
 for ii in bins:
-    if ii > 11.9:
+    if ii > 11.7:
         bins_list.remove(ii)
 
 bins = np.array(bins_list)
@@ -964,10 +967,12 @@ for ii in range(len(coords_test)):
                             plot_calcs(mass_dat[ii][neigh_vals[jj]],bins,dlogM)
 
 all_mock_meds = [[] for xx in range(len(nn_mass_dist))]
+all_mock_mass_means = [[] for xx in range(len(nn_mass_dist))]
 
 for vv in range(len(nn_mass_dist)):
-    all_mock_meds[vv] = np.array([bin_func(nn_mass_dist[vv],bins,(jj+1)) \
-                                for jj in range(len(nn_mass_dist[vv].T)-1)])
+    all_mock_meds[vv] = [(bin_func(nn_mass_dist[vv],bins,(jj+1))) \
+                            for jj in range(len(nn_mass_dist[vv].T)-1)]
+    all_mock_mass_means[vv] = (mean_bin_mass(nn_mass_dist[vv],bins))                        
     
 med_plot_arr = [([[] for yy in xrange(len(nn_mass_dist))]) \
                                             for xx in xrange(len(neigh_vals))]
@@ -1122,7 +1127,7 @@ for qq in range(len(eco_mass_dat)):
     bin_centers, eco_freq, eco_ratio_info[qq] = plot_calcs(eco_mass_dat[qq],\
                                     bins,dlogM,mass_err=True,ratio_err=True)
 
-eco_medians   = [[] for xx in xrange(len(eco_mass_dat))]    
+eco_medians   = [[] for xx in xrange(len(eco_mass_dat))]   
 
 for jj in (range(len(eco_mass_dat))):
     eco_medians[jj] = np.array(bin_func(eco_mass_dist,bins,(jj+1),\
@@ -1133,8 +1138,8 @@ for jj in (range(len(eco_mass_dat))):
 
 fig,ax  = plt.subplots(figsize=(8,8))
 ax.set_title('Mass Distribution',fontsize=18)
-ax.set_xlabel('$\log\ M_{*}/M_{\odot}$',fontsize=18)
-ax.set_ylabel(r'$\log\ \frac{N_{gal}}{N_{total}*dlogM_{*}}$',fontsize=20)
+ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=18)
+ax.set_ylabel(r'$\log\ (\frac{N_{gal}}{N_{total}*dlogM_{*}})$',fontsize=20)
 ax.set_yscale('log')
 ax.set_xlim(9.1,11.9)
 ax.tick_params(axis='both', labelsize=14)
@@ -1356,7 +1361,7 @@ fig, axes = plt.subplots(nrows=nrow_num, ncols=ncol_num, \
             figsize=(150,200), sharex= True,sharey=True)
 axes_flat = axes.flatten()
 
-fig.text(0.02, 0.5,r'$\log\ \frac{N_{gal}}{N_{total}*dlogM_{*}}$', ha='center',
+fig.text(0.02, 0.5,r'$\log\ (\frac{N_{gal}}{N_{total}*dlogM_{*}})$', ha='center',
     va='center',rotation='vertical',fontsize=20)
 
 
@@ -1460,7 +1465,7 @@ for ii in range(len(mass_freq)+1):
     if ii == 0 or ii == 8:
         ax.legend(loc='best')
     if ii == 7:
-        ax.set_xlabel('$\log\ M_{*}$',fontsize=18)
+        ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=18)
     
 plt.subplots_adjust(left=0.03, bottom=0.08, right=0.99, top=0.99,\
                     hspace=0,wspace=0)                
@@ -1521,15 +1526,15 @@ def param_finder(hist_counts,bin_centers):
 ###############################################################################
 ###Test that param_finder is working
 
-opt_v,test_arr = param_finder(eco_low[1][2],bin_centers)
-schech_vals    = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
-                    opt_v[2])
+# opt_v,test_arr = param_finder(eco_low[1][2],bin_centers)
+# schech_vals    = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
+#                     opt_v[2])
 
-####THE error isn't working. Stops after 800 iterations.
+# ####THE error isn't working. Stops after 800 iterations.
 
-# opt_v,est_v = optimize.curve_fit(schechter_log_func,10**bin_centers,
-#     eco_low[1][2],p0 = (1,-1.05,10**10.64),sigma=eco_low[1]['low_err'][0],\
-#     absolute_sigma=True)
+# # opt_v,est_v = optimize.curve_fit(schechter_log_func,10**bin_centers,
+# #     eco_low[1][2],p0 = (1,-1.05,10**10.64),sigma=eco_low[1]['low_err'][0],\
+# #     absolute_sigma=True)
 
 # fig,ax = plt.subplots()
 
@@ -1814,7 +1819,7 @@ fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
 axes_flat = axes.flatten()
 
 
-fig.text(0.01, 0.5, '$\log\ M_{*}/M_{\odot}$', ha='center', \
+fig.text(0.01, 0.5, '$\log\ (M_{*}/M_{\odot})$', ha='center', \
     va='center',rotation='vertical',fontsize=20)
 
 
@@ -1843,7 +1848,7 @@ fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
 axes_flat = axes.flatten()
 
 
-fig.text(0.01, 0.5, '$\log\ M_{*}/M_{\odot}$', ha='center', \
+fig.text(0.01, 0.5, '$\log\ (M_{*}/M_{\odot})$', ha='center', \
     va='center',rotation='vertical',fontsize=20)
 
 
@@ -1917,8 +1922,99 @@ plt.show()
 
 
 ###############################################################################
+
+def schechter_real_func(mean_of_mass_bin,bins,phi_star,alpha,Mstar):
+    M_over_mstar = mean_of_mass_bin/Mstar
+    temp_val     = phi_star/Mstar * M_over_mstar**(alpha+1) * \
+                        np.exp(- M_over_mstar)
+    int_val = [[] for ii in range(len(temp_val))]
+    for ii in range(len(temp_val)):
+        int_val[ii]      = integrate.quad(temp_val[ii],bins[ii],bins[ii+1])
+
+    return int_val
+
+
 ###############################################################################
+
+
+
 ###############################################################################
+
+def mean_bin_mass(mass_dist,bins):
+    """
+    Returns median distance to Nth nearest neighbor
+
+    Parameters
+    ----------
+    mass_dist: array-like
+        An array with mass values in at index 0 (when transformed) 
+    bins: array=like
+        A 1D array with the values which will be used as the bin edges     
+
+    Returns
+    -------
+
+    """
+    edges        = bins
+
+    digitized    = np.digitize(mass_dist.T[0],edges)
+    digitized   -= int(1)
+
+    bin_nums          = np.unique(digitized)
+    bin_nums_list     = list(bin_nums)
+
+    for jj in range(len(bins)-1):
+        if jj not in bin_nums:
+            bin_nums_list.append(jj)
+
+    if (len(bins)-1) in bin_nums_list:
+        bin_nums_list.remove(len(bins)-1)
+
+    if (len(bins)) in bin_nums_list:
+        bin_nums_list.remove(len(bins))
+
+    bin_nums = np.array(bin_nums_list)
+
+    mean_mass = np.array([np.mean(mass_dist.T[0][digitized==ii]) \
+                for ii in bin_nums])
+
+    return mean_mass 
+
+
+
+###############################################################################
+
+def param_finder(hist_counts,bin_centers):
+    """
+    Parameters
+    ----------
+    hist-counts: array-like
+        An array with stellar mass function values which will be used in the 
+        Schechter function parameterization
+    bin_centers: array-like
+        An array with the same number of values as hist_counts; used as
+        independent variable in Schechter function
+
+    Returns
+    -------
+    opt_v: array-like
+        Array with three values: phi_star, alpha, and M_star
+    res_arr: array-like
+        Array with two values: alpha and log_M_star
+
+
+    """
+    xdata = 10**bin_centers
+    p0    = (1,-1.05,10**10.64)
+    opt_v,est_cov = optimize.curve_fit(schechter_log_func,xdata,\
+                            hist_counts,p0=p0)
+    alpha   = opt_v[1]
+    log_m_star    = np.log10(opt_v[2])
+    res_arr = np.array([alpha,log_m_star])
+
+    return opt_v, res_arr
+
+
 ###############################################################################
 ###############################################################################
 ###############################################################################
@@ -1956,20 +2052,20 @@ plt.show()
 
 #One dictionary for the lower portion of the cuts and one for the higher
 
-# param_dict_low  = {}
-# param_dict_high = {}
+param_dict_low  = {}
+param_dict_high = {}
 
 
-# for dd in neigh_vals:
-#     param_dict_low[dd]  = {}
-#     param_dict_high[dd] = {}
-#     for ee in frac_vals:
-#         param_dict_low[dd][ee]  = {}
-#         param_dict_high[dd][ee] = {}
-#         opt_v, param_dict_low[dd][ee]  = param_finder(eco_low[dd][ee],\
-#             bin_centers)
-#         opt_v, param_dict_high[dd][ee] = param_finder(eco_high[dd][ee],\
-#             bin_centers)
+for dd in neigh_vals:
+    param_dict_low[dd]  = {}
+    param_dict_high[dd] = {}
+    for ee in frac_vals:
+        param_dict_low[dd][ee]  = {}
+        param_dict_high[dd][ee] = {}
+        opt_v, param_dict_low[dd][ee]  = param_finder(eco_low[dd][ee],\
+            bin_centers)
+        opt_v, param_dict_high[dd][ee] = param_finder(eco_high[dd][ee],\
+            bin_centers)
 
 # #### Putting the percentile cuts in order, as seen below
 

@@ -2,6 +2,7 @@ from __future__ import division, absolute_import
 
 import astropy.stats
 import glob
+import math
 import matplotlib.pyplot as plt 
 from matplotlib import ticker
 from matplotlib.ticker import FormatStrFormatter
@@ -10,7 +11,9 @@ import os
 import pandas as pd
 from scipy import optimize,spatial
 
-#########################################################################
+###############################################################################
+###############################################################################
+###############################################################################
 
 __author__     =['Victor Calderon']
 __copyright__  =["Copyright 2016 Victor Calderon, Index function"]
@@ -46,7 +49,97 @@ def Index(directory, datatype):
 
     return files
 
-############################################################################
+###############################################################################    
+
+def myceil(x, base=10):
+    """
+    Returns the upper-bound integer of 'x' in base 'base'.
+
+    Parameters
+    ----------
+    x: float
+        number to be approximated to closest number to 'base'
+
+    base: float
+        base used to calculate the closest 'largest' number
+
+    Returns
+    -------
+    n_high: float
+        Closest float number to 'x', i.e. upper-bound float.
+
+    Example
+    -------
+    >>>> myceil(12,10)
+      20
+    >>>>
+    >>>> myceil(12.05, 0.1)
+     12.10000 
+    """
+    n_high = float(base*math.ceil(float(x)/base))
+
+    return n_high
+
+###############################################################################    
+
+def myfloor(x, base=10):
+    """
+    Returns the lower-bound integer of 'x' in base 'base'
+
+    Parameters
+    ----------
+    x: float
+        number to be approximated to closest number of 'base'
+
+    base: float
+        base used to calculate the closest 'smallest' number
+
+    Returns
+    -------
+    n_low: float
+        Closest float number to 'x', i.e. lower-bound float.
+
+    Example
+    -------
+    >>>> myfloor(12, 5)
+    >>>> 10
+    """
+    n_low = float(base*math.floor(float(x)/base))
+
+    return n_low
+
+###############################################################################
+
+def Bins_array_create(arr, base=10):
+    """
+    Generates array between [arr.min(), arr.max()] in steps of `base`.
+
+    Parameters
+    ----------
+    arr: array_like, Shape (N,...), One-dimensional
+        Array of numerical elements
+
+    base: float, optional (default=10)
+        Interval between bins
+
+    Returns
+    -------
+    bins_arr: array_like
+        Array of bin edges for given arr
+
+    """
+    base = float(base)
+    arr  = np.array(arr)
+    assert(arr.ndim==1)
+    arr_min  = myfloor(arr.min(), base=base)
+    arr_max  = myceil( arr.max(), base=base)
+    bins_arr = np.arange(arr_min, arr_max+0.5*base, base)
+
+    return bins_arr
+
+###############################################################################
+###############################################################################
+###############################################################################
 
 def sph_to_cart(ra,dec,cz):
     """
@@ -100,7 +193,7 @@ def calc_dens(n_val,r_val):
 
     return dens
 
-#################################################################################
+###############################################################################
 
 def plot_calcs(mass,bins,dlogM,mass_err=False,ratio_err=False):
     """
@@ -189,7 +282,7 @@ def plot_calcs(mass,bins,dlogM,mass_err=False,ratio_err=False):
 
     return bin_centers, mass_freq, ratio_dict
 
-##############################################################################
+###############################################################################
 
 def bin_func(mass_dist,bins,kk,bootstrap=False):
     """
@@ -226,26 +319,52 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
         all the galaxies in each of the bins
     """
     edges        = bins
+
+    # print 'length bins:'
+    # print len(bins)
+
     digitized    = np.digitize(mass_dist.T[0],edges)
     digitized   -= int(1)
 
-    bin_nums     = np.unique(digitized)
-    bin_nums     = list(bin_nums)
+    bin_nums          = np.unique(digitized)
+    bin_nums_list     = list(bin_nums)
 
     # if 12 not in bin_nums:
     #     bin_nums.append(12)
     # if 13 in bin_nums:
     #     bin_nums.remove(13
 
-    if 13 not in bin_nums:
-        bin_nums.append(13)
-    if 14 in bin_nums:
-        bin_nums.remove(14)
+    # if 13 not in bin_nums:
+    #     bin_nums.append(13)
+    # if 14 in bin_nums:
+    #     bin_nums.remove(14)
 
-    bin_nums = np.array(bin_nums)
+    for jj in range(len(bins)-1):
+        if jj not in bin_nums:
+            bin_nums_list.append(jj)
+    # print 'appended'
+    # print bin_nums_list
+
+    if (len(bins)-1) in bin_nums_list:
+        bin_nums_list.remove(len(bins)-1)
+    # print 'removed'
+    # print bin_nums_list
+
+    if (len(bins)) in bin_nums_list:
+        bin_nums_list.remove(len(bins))
+    # print 'removed'
+    # print bin_nums_list
+
+    bin_nums = np.array(bin_nums_list)
+
+    for ii in bin_nums:
+        if len(mass_dist.T[kk][digitized==ii]) == 0:
+            temp_list = list(mass_dist.T[kk]\
+                                             [digitized==ii])
+            temp_list.append(np.zeros(len(bin_nums)))
+            mass_dist.T[kk][digitized==ii] = np.array(temp_list)
 
     # print bin_nums
-
     # print len(bin_nums)
     
     medians  = np.array([np.median(mass_dist.T[kk][digitized==ii]) \
@@ -275,7 +394,7 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
 
     return medians    
 
-#####################################################################################
+###############################################################################
 def hist_calcs(mass,bins,dlogM,eco=False):
     """
     Returns dictionaries with the counts for the upper
@@ -343,7 +462,7 @@ def hist_calcs(mass,bins,dlogM,eco=False):
         hist_dict_high['high_err']    = high_err
     
     return hist_dict_low, hist_dict_high
-#####################################################################################
+###############################################################################
 
 def plot_all_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx):
     """
@@ -373,7 +492,7 @@ def plot_all_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx):
     Figure with three subplots showing appropriate ratios
     """
     if plot_idx     ==16:
-        ax.set_xlabel('$\log\ M_{*}$',fontsize=18)
+        ax.set_xlabel('$\log\ M_{*}/M_{\odot}$',fontsize=18)
     if col_num      ==0:
         title_label = 'Mass Ratio 50/50, {0} NN'.format(neigh_val)
         frac_val    = 10
@@ -397,7 +516,7 @@ def plot_all_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx):
     ax.axhline(y=1,c="darkorchid",linewidth=0.5,zorder=0)
     ax.plot(bin_centers,y_vals,color='silver')
 
-###################################################################################
+###############################################################################
 
 def plot_eco_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx,only=False):
     """
@@ -435,7 +554,7 @@ def plot_eco_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx,only=False):
     """
     if only == True:
         if plot_idx     ==16:
-            ax.set_xlabel('$\log\ M_{*}$',fontsize=18)
+            ax.set_xlabel('$\log\ M_{*}/M_{\odot}$',fontsize=18)
         if col_num      ==0:
             title_label = 'Mass Ratio 50/50, {0} NN'.format(neigh_val)
             frac_val    = 10
@@ -462,7 +581,7 @@ def plot_eco_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx,only=False):
     ax.errorbar(bin_centers,y_vals_2,yerr=y_vals[1][hh],\
                 color='dodgerblue',linewidth=2)
 
-#######################################################################################
+###############################################################################
 
 def plot_hists(mass,neigh_val,bins,dlogM,ax,col_num,plot_idx):
     """
@@ -509,6 +628,8 @@ def plot_hists(mass,neigh_val,bins,dlogM,ax,col_num,plot_idx):
         frac_val    = 10
         ax.text(0.05, 0.95, title_label,horizontalalignment='left',\
                 verticalalignment='top',transform=ax.transAxes,fontsize=12)
+    if plot_idx == 16:
+        ax.set_xlabel('$\log\ M_{*}/M_{\odot}$',fontsize=18)                      
     ax.set_xlim(9.1,11.9)
     ax.set_ylim([10**-3,10**1])
     ax.set_xticks(np.arange(9.5, 12., 0.5))
@@ -532,12 +653,13 @@ def plot_hists(mass,neigh_val,bins,dlogM,ax,col_num,plot_idx):
 #        alpha=0.1)
     ax.plot(bins_cens, high_counts, color='lightslategray',alpha=0.1)
 
-    res = np.array([low_counts,high_counts])
+    # res = np.array([low_counts,high_counts])
 
-    return res
+    # return res
+
 ###############################################################################
 
-def plot_eco_hists(mass,bins,dlogM,ax,col):
+def plot_eco_hists(mass,bins,dlogM,ax,col,plot_idx):
     if   col==0:
         frac_val    = 2
     elif col==1:
@@ -551,12 +673,15 @@ def plot_eco_hists(mass,bins,dlogM,ax,col):
     counts, edges = np.histogram(frac_mass,bins)
     bins_cens     = .5*(edges[:-1]+edges[1:])
     ax.step(bins_cens, (counts/float(len(frac_mass))/dlogM), color='lime',\
-            where='mid')
+            where='mid',label='Lower')
 
     frac_mass_2       = mass[-frac_data:]
     counts_2, edges_2 = np.histogram(frac_mass_2,bins)
     ax.step(bins_cens, (counts_2/float(len(frac_mass_2))/dlogM), \
-            color='dodgerblue',where='mid')
+            color='dodgerblue',where='mid',label='Higher')
+
+    if plot_idx == 0:
+        ax.legend(loc='best')
 
 ###############################################################################
 
@@ -590,20 +715,22 @@ def plot_all_meds(bin_centers,y_vals,ax,plot_idx):
     ax.set_xlim(9.1,11.9)
     ax.set_yscale('symlog')
     ax.set_xticks(np.arange(9.5,12.,0.5))  
-    ax.tick_params(axis='both', which='major', labelsize=16)
+    ax.set_yticks(np.arange(0,12,1))  
+    ax.set_yticklabels(np.arange(1,11,2))
+    ax.tick_params(axis='x', which='major', labelsize=16)
     title_here = 'n = {0}'.format(titles[plot_idx])
     ax.text(0.05, 0.95, title_here,horizontalalignment='left',\
             verticalalignment='top',transform=ax.transAxes,fontsize=18)
     if plot_idx == 4:
-        ax.set_xlabel('$\log\ M_{*}$',fontsize=18)
+        ax.set_xlabel('$\log\ M_{*}/M_{\odot}$',fontsize=20)
     ax.plot(bin_centers,y_vals,color='silver')
 
 #############################################################################              
 
 def plot_eco_meds(bin_centers,y_vals,low_lim,up_lim,ax,plot_idx,only=False):
     """
-    Returns six subplots showing the median Nth nearest neighbor distance for ECO
-        galaxies in each mass bin
+    Returns six subplots showing the median Nth nearest neighbor distance for 
+        ECO galaxies in each mass bin
         
     Parameters
     ----------
@@ -649,9 +776,11 @@ def plot_eco_meds(bin_centers,y_vals,low_lim,up_lim,ax,plot_idx,only=False):
         if plot_idx == 4:
             ax.set_xlabel('$\log\ M_{*}$',fontsize=18)
     ax.errorbar(bin_centers,y_vals,yerr=0.1,lolims=low_lim,\
-        uplims=up_lim,color='dodgerblue')
+        uplims=up_lim,color='dodgerblue',label='ECO')
+    # if plot_idx == 5:
+    #     ax.legend(loc='best')
 
-##############################################################################
+###############################################################################
 
 def plot_bands(bin_centers,upper,lower,ax):
     """
@@ -679,7 +808,7 @@ def plot_bands(bin_centers,upper,lower,ax):
     """
     ax.fill_between(bin_centers,upper,lower,color='silver',alpha=0.1)
 
-#######################################################################################
+###############################################################################
 
 def plot_med_range(bin_centers,low_lim,up_lim,ax,alpha,color='gray'):
     """
@@ -706,7 +835,7 @@ def plot_med_range(bin_centers,low_lim,up_lim,ax,alpha,color='gray'):
         
     Returns
     -------
-    A colododgerblue band spanning from the max y-values to the minimum.
+    A band spanning from the max y-values to the minimum.
     
     """
     ax.fill_between(bin_centers,low_lim,up_lim,color=color,alpha=alpha)    
@@ -715,14 +844,12 @@ def plot_med_range(bin_centers,low_lim,up_lim,ax,alpha,color='gray'):
 ##############################################################################
 ##############################################################################
 
-dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density\Catalogs\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_scatter_mocks\Resolve_plk_5001_so_mvir_scatter0p3_ECO_Mocks"
-usecols  = (0,1,8,13)
+dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
+dirpath += r"\Catalogs\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_"
+dirpath += r"scatter_mocks\Resolve_plk_5001_so_mvir_scatter0p2_ECO_Mocks"
 
-#scatter 3 dec
-# bins  = np.linspace(9.1,11.7,14)
-# dlogM = (11.7-9.1)/13
-bins  = np.linspace(9.1,11.9,15)
-dlogM = (11.9-9.1)/14
+usecols  = (0,1,8,13)
+dlogM    = 0.2
 
 ##############################################################################
 ##############################################################################
@@ -735,14 +862,38 @@ PD       = [(pd.read_csv(ECO_cats[ii],sep="\s+", usecols= usecols,header=None,\
                    skiprows=2,names=names)) for ii in range(len(ECO_cats))]
 PD_comp  = [(PD[ii][PD[ii].logMstar >= 9.1]) for ii in range(len(ECO_cats))]
 
-for ii in range(len(PD_comp)):
-    print max(PD_comp[ii].logMstar)
-    print min(PD_comp[ii].logMstar)
 
-ra_arr   = np.array([(np.array(PD_comp[ii])).T[0] for ii in range(len(PD_comp))])
-dec_arr  = np.array([(np.array(PD_comp[ii])).T[1] for ii in range(len(PD_comp))])
-cz_arr   = np.array([(np.array(PD_comp[ii])).T[2] for ii in range(len(PD_comp))])
-mass_arr = np.array([(np.array(PD_comp[ii])).T[3] for ii in range(len(PD_comp))])
+# PD_test  = [(PD[ii][PD[ii].logMstar >= 11.7]) for ii in range(len(ECO_cats))]
+# for ii in range(len(PD_test)):
+#     print len(PD_test[ii])
+
+min_max_mass_arr = []
+
+for ii in range(len(PD_comp)):
+    min_max_mass_arr.append(max(PD_comp[ii].logMstar))
+    min_max_mass_arr.append(min(PD_comp[ii].logMstar))
+
+min_max_mass_arr = np.array(min_max_mass_arr)
+
+bins = Bins_array_create(min_max_mass_arr,dlogM)
+bins+= 0.1
+bins_list = list(bins)
+for ii in bins:
+    if ii > 11.9:
+        bins_list.remove(ii)
+
+bins = np.array(bins_list)
+
+num_of_bins = int(len(bins) - 1) 
+
+ra_arr   = np.array([(np.array(PD_comp[ii])).T[0] \
+    for ii in range(len(PD_comp))])
+dec_arr  = np.array([(np.array(PD_comp[ii])).T[1] \
+    for ii in range(len(PD_comp))])
+cz_arr   = np.array([(np.array(PD_comp[ii])).T[2] \
+    for ii in range(len(PD_comp))])
+mass_arr = np.array([(np.array(PD_comp[ii])).T[3] \
+    for ii in range(len(PD_comp))])
 
 coords_test = np.array([sph_to_cart(ra_arr[vv],dec_arr[vv],cz_arr[vv]) \
                 for vv in range(len(ECO_cats))])
@@ -761,11 +912,12 @@ nn_specs       = [(np.array(nn_arr).T[ii].T[neigh_vals].T) for ii in \
 nn_mass_dist   = np.array([(np.column_stack((mass_arr[qq],nn_specs[qq]))) \
                     for qq in range(len(coords_test))])
 
-###################################################################################
+###############################################################################
 sat_cols    = (13,25)
   
 sat_names   = ['logMstar','cent_sat_flag']
-SF_PD       = [(pd.read_csv(ECO_cats[ii],sep="\s+", usecols= sat_cols,header=None,\
+SF_PD       = [(pd.read_csv(ECO_cats[ii],sep="\s+", usecols= sat_cols,\
+                header=None,
                      skiprows=2,names=sat_names)) for ii in range(8)]
 SF_PD_comp  = [(SF_PD[ii][SF_PD[ii].logMstar >= 9.1]) for ii in \
                 range(len(ECO_cats))]
@@ -779,7 +931,7 @@ gal_tot   = np.array([(len(SF_PD_comp[ii])) for ii in range(len(SF_PD_comp))])
 
 print 'SAT_FRAC = {0}'.format(sats_num/gal_tot)
 
-###################################################################################
+###############################################################################
 
 nn_dist    = {}
 nn_dens    = {}
@@ -805,7 +957,8 @@ for ii in range(len(coords_test)):
                                                 (neigh_vals)+1)[jj]])))
 
         idx = np.array([nn_dens[ii][neigh_vals[jj]].T[1].argsort()])
-        mass_dat[ii][(neigh_vals[jj])] = (nn_dens[ii][neigh_vals[jj]][idx].T[0])
+        mass_dat[ii][(neigh_vals[jj])] = (nn_dens[ii][neigh_vals[jj]]\
+                                            [idx].T[0])
 
         bin_centers, mass_freq[ii], ratio_info[ii][neigh_vals[jj]] = \
                             plot_calcs(mass_dat[ii][neigh_vals[jj]],bins,dlogM)
@@ -834,70 +987,75 @@ for jj in range(len(mass_freq_plot.T)):
     max_lim[jj] = max(mass_freq_plot.T[jj])
     min_lim[jj] = min(mass_freq_plot.T[jj])
 
-###################################################################################
+###############################################################################
 # ordered_mass = nn_mass_dist[0].T[0][(nn_mass_dist[0].T[0].argsort())]
-dist_cont = [[[[] for zz in xrange(len(bins)-1)] for yy in \
-              xrange(len(nn_mass_dist))] for xx in xrange(1,len(nn_mass_dist[0].T))]
+# dist_cont = [[[[] for zz in xrange(len(bins)-1)] for yy in \
+#               xrange(len(nn_mass_dist))] for xx in \
+#               xrange(1,len(nn_mass_dist[0].T))]
 
-for ii in xrange(len(nn_mass_dist)):
-    sorting_test  = np.digitize(nn_mass_dist[ii].T[0],bins)
-    bin_nums      = np.unique(sorting_test)
-    bin_nums_list = list(bin_nums)
-    # if 13 not in bin_nums:
-    #     bin_nums_list.append(13)
-    if 14 not in bin_nums:
-        bin_nums_list.append(14)
-        bin_nums = np.array(bin_nums_list)
-    # if 14 in bin_nums_list:
-    #     bin_nums_list.remove(14)
-    #     bin_nums  = np.array(bin_nums_list)
-    if 15 in bin_nums_list:
-        bin_nums_list.remove(15)
-        bin_nums  = np.array(bin_nums_list)
-    for jj in xrange(1,len(nn_mass_dist[ii].T)):
-        for hh in bin_nums:
-            dist_cont[jj-1][ii][hh-1] = (nn_mass_dist[ii].T[jj]\
-                [sorting_test==hh])
-            if len(dist_cont[jj-1][ii][hh-1]) == 0:
-                (dist_cont[jj-1][ii][hh-1]) = list(dist_cont[jj-1][ii][hh-1])
-                (dist_cont[jj-1][ii][hh-1]).append(np.zeros\
-                    (len(dist_cont[1][0][0])))
-                (dist_cont[jj-1][ii][hh-1]) = np.array((dist_cont[jj-1][ii]\
-                    [hh-1]))
+# for ii in xrange(len(nn_mass_dist)):
+#     sorting_test  = np.digitize(nn_mass_dist[ii].T[0],bins)
+#     bin_nums      = np.unique(sorting_test)
+#     bin_nums_list = list(bin_nums)
+#     # if 13 not in bin_nums:
+#     #     bin_nums_list.append(13)
+#     # if 14 not in bin_nums:
+#     #     bin_nums_list.append(14)
+#     #     bin_nums = np.array(bin_nums_list)
+#     # if 14 in bin_nums_list:
+#     #     bin_nums_list.remove(14)
+#     #     bin_nums  = np.array(bin_nums_list)
+#     for dd in range(1,num_of_bins+1):
+#         if dd not in bin_nums:
+#             bin_nums_list.append(dd)
+#     if len(bins) in bin_nums_list:
+#         bin_nums_list.remove(len(bins))
+#     bin_nums  = np.array(bin_nums_list)
+#     for jj in xrange(1,len(nn_mass_dist[ii].T)):
+#         for hh in bin_nums:
+#             dist_cont[jj-1][ii][hh-1] = (nn_mass_dist[ii].T[jj]\
+#                 [sorting_test==hh])
+#             if len(dist_cont[jj-1][ii][hh-1]) == 0:
+#                 (dist_cont[jj-1][ii][hh-1]) = list(dist_cont[jj-1][ii][hh-1])
+#                 (dist_cont[jj-1][ii][hh-1]).append(np.zeros\
+#                     (len(dist_cont[1][0][0])))
+#                 (dist_cont[jj-1][ii][hh-1]) = np.array((dist_cont[jj-1][ii]\
+#                     [hh-1]))
 
 # for ii in xrange(len(nn_mass_dist)):
 #     for jj in xrange(1,len(nn_mass_dist[ii].T)):
 #         for hh in bin_nums:
 #             print len(dist_cont[jj-1][ii][hh-1])           
 
-###################################################################################
-top_68 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
-            xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
-low_68 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
-            xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
-top_95 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
-            xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
-low_95 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
-            xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
-med_50 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
-            xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
+###############################################################################
+# top_68 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
+#             xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
+# low_68 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
+#             xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
+# top_95 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
+#             xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
+# low_95 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
+#             xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
+# med_50 = [[[[]for ll in xrange(len(bin_nums))]for yy in \
+#             xrange(len(nn_mass_dist))] for xx in xrange(len(neigh_vals))]
 
-for aa in xrange(len(neigh_vals)):
-    for bb in xrange(len(nn_mass_dist)):
-        for cc in xrange(len(dist_cont[aa][bb])):
-            top_68[aa][bb][cc] = np.percentile(dist_cont[aa][bb][cc],84)
-            low_68[aa][bb][cc] = np.percentile(dist_cont[aa][bb][cc],16)
-            top_95[aa][bb][cc] = np.percentile(dist_cont[aa][bb][cc],97.5)
-            low_95[aa][bb][cc] = np.percentile(dist_cont[aa][bb][cc],2.5)
-            med_50[aa][bb][cc] = np.median((dist_cont[aa][bb][cc]))
+# for aa in xrange(len(neigh_vals)):
+#     for bb in xrange(len(nn_mass_dist)):
+#         for cc in xrange(len(dist_cont[aa][bb])):
+#             top_68[aa][bb][cc] = np.percentile(dist_cont[aa][bb][cc],84)
+#             low_68[aa][bb][cc] = np.percentile(dist_cont[aa][bb][cc],16)
+#             top_95[aa][bb][cc] = np.percentile(dist_cont[aa][bb][cc],97.5)
+#             low_95[aa][bb][cc] = np.percentile(dist_cont[aa][bb][cc],2.5)
+#             med_50[aa][bb][cc] = np.median((dist_cont[aa][bb][cc]))
             
-top_68 = np.array(top_68)
-low_68 = np.array(low_68)
-top_95 = np.array(top_95)
-low_95 = np.array(low_95)
-med_50 = np.array(med_50)
+# top_68 = np.array(top_68)
+# low_68 = np.array(low_68)
+# top_95 = np.array(top_95)
+# low_95 = np.array(low_95)
+# med_50 = np.array(med_50)
 
-###################################################################################
+##not working with 1 dec scatter...
+###############################################################################
 
 frac_vals   = [2,4,10]
 nn_plot_arr = [[[] for yy in xrange(len(nn_mass_dist))] for xx in \
@@ -915,16 +1073,17 @@ for jj in range(len(nn_mass_dist)):
         for ii in range(len(neigh_vals)):
             plot_frac_arr[ii][hh][jj] = nn_plot_arr[ii][jj][frac_vals[hh]]
 
-######################################################################################
-######################################################################################
-######################################################################################
+###############################################################################
+###############################################################################
+###############################################################################
 
-eco_path = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density\Catalogs\ECO_true"
-eco_cols = np.array([0,1,2,4])
+eco_path  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
+eco_path += r"\Catalogs\ECO_true"
+eco_cols  = np.array([0,1,2,4])
 
-######################################################################################
-######################################################################################
-######################################################################################
+###############################################################################
+###############################################################################
+###############################################################################
 
 ECO_true = (Index(eco_path,'.txt'))
 names    = ['ra','dec','cz','logMstar']
@@ -951,7 +1110,8 @@ eco_dens = ([calc_dens(neigh_vals[jj],\
 
 eco_mass_dens = [(np.column_stack((mass_eco,eco_dens[ii]))) for ii in \
                 range(len(neigh_vals))]
-eco_idx  = [(eco_mass_dens[jj].T[1].argsort()) for jj in range(len(neigh_vals))]
+eco_idx  = [(eco_mass_dens[jj].T[1].argsort()) for jj in \
+            range(len(neigh_vals))]
 eco_mass_dat  = [(eco_mass_dens[jj][eco_idx[jj]].T[0]) for jj in \
                 range(len(neigh_vals))]
 
@@ -965,16 +1125,18 @@ for qq in range(len(eco_mass_dat)):
 eco_medians   = [[] for xx in xrange(len(eco_mass_dat))]    
 
 for jj in (range(len(eco_mass_dat))):
-    eco_medians[jj] = np.array(bin_func(eco_mass_dist,bins,(jj+1),bootstrap=True))
+    eco_medians[jj] = np.array(bin_func(eco_mass_dist,bins,(jj+1),\
+        bootstrap=True))
 
-#####################################################################################
-#####################################################################################
+###############################################################################
+###############################################################################
 
 fig,ax  = plt.subplots(figsize=(8,8))
 ax.set_title('Mass Distribution',fontsize=18)
-ax.set_xlabel('$\log\ M_{*}$',fontsize=17)
+ax.set_xlabel('$\log\ M_{*}/M_{\odot}$',fontsize=18)
+ax.set_ylabel(r'$\log\ \frac{N_{gal}}{N_{total}*dlogM_{*}}$',fontsize=20)
 ax.set_yscale('log')
-ax.set_xlim(9.1,12.1)
+ax.set_xlim(9.1,11.9)
 ax.tick_params(axis='both', labelsize=14)
 
 for ii in range(len(mass_freq)):
@@ -984,11 +1146,11 @@ ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='dodgerblue',\
             linewidth=2,label='ECO')
 ax.legend(loc='best')
 
-plt.subplots_adjust(left=0.08, bottom=0.1, right=0.98, top=0.94,\
+plt.subplots_adjust(left=0.15, bottom=0.1, right=0.85, top=0.94,\
                     hspace=0.2,wspace=0.2)
 plt.show()
 
-####################################################################################
+###############################################################################
 
 A = {}
 nn_dict   = {1:0,2:1,3:2,5:3,10:4,20:5}
@@ -1014,7 +1176,7 @@ for nn in nn_keys:
         zz_tot_min = [np.nanmin(zz_tot[kk]) for kk in xrange(len(zz_tot))]
         A[bin_str] = [zz_tot_max,zz_tot_min]
 
-####################################################################################
+###############################################################################
 
 np.seterr(divide='ignore',invalid='ignore')
 
@@ -1025,27 +1187,31 @@ zz       = int(0)
 fig, axes = plt.subplots(nrows=nrow_num, ncols=ncol_num, \
             figsize=(100,200), sharex= True,sharey=True)
 axes_flat = axes.flatten()
+
+
+fig.text(0.01, 0.5, 'High Density Counts/Lower Density Counts', ha='center', \
+    va='center',rotation='vertical',fontsize=20)
 # fig.suptitle("Percentile Trends", fontsize=18)
 
 while zz <= 16:
     for ii in range(len(eco_ratio_info)):
         for hh in range(len(eco_ratio_info[0][1])):
             for jj in range(len(nn_mass_dist)):
-                upper = A['{0}_{1}'.format(neigh_vals[ii],frac_vals[hh])][0]
-                lower  = A['{0}_{1}'.format(neigh_vals[ii],frac_vals[hh])][1]
-                plot_bands(bin_centers,upper,lower,axes_flat[zz] )
+                # upper = A['{0}_{1}'.format(neigh_vals[ii],frac_vals[hh])][0]
+                # lower  = A['{0}_{1}'.format(neigh_vals[ii],frac_vals[hh])][1]
+                # plot_bands(bin_centers,upper,lower,axes_flat[zz] )
                 plot_all_rats(bin_centers,(plot_frac_arr[ii][hh][jj]),\
                               neigh_vals[ii],axes_flat[zz],hh,zz)
             plot_eco_rats(bin_centers,(eco_ratio_info[ii]),neigh_vals[ii],\
                                     axes_flat[zz],hh,zz)
             zz += 1
 
-plt.subplots_adjust(left=0.02, bottom=0.09, right=1.00, top=1.00,\
+plt.subplots_adjust(left=0.04, bottom=0.09, right=0.98, top=0.98,\
                     hspace=0,wspace=0)
 
 plt.show()
 
-######################################################################################
+###############################################################################
 
 B = {}
 yy_num = len(med_plot_arr[0])
@@ -1063,7 +1229,7 @@ for nn in range(len(med_plot_arr)):
     yy_tot_min = [np.nanmin(yy_tot[kk]) for kk in xrange(len(yy_tot))]
     B[med_str] = [yy_tot_max,yy_tot_min]
 
-#####################################################################################
+###############################################################################
 
 nrow_num_mass = int(2)
 ncol_num_mass = int(3)
@@ -1071,29 +1237,32 @@ ncol_num_mass = int(3)
 fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
         figsize=(100,200), sharex= True, sharey = True)
 axes_flat = axes.flatten()
+fig.text(0.01, 0.5, 'Distance to Nth Neighbor (Mpc)', ha='center', \
+    va='center',rotation='vertical',fontsize=20)
 
 zz = int(0)
 while zz <=4:
     for ii in range(len(med_plot_arr)):
         for vv in range(len(nn_mass_dist)):
-                lower_m  = B['{0}'.format(ii)][0]
-                upper_m  = B['{0}'.format(ii)][1]
-                plot_med_range(bin_centers,top_95[ii][vv],low_95[ii][vv],\
-                    axes_flat[zz],0.05,color='lightsteelblue')
-                plot_med_range(bin_centers,top_68[ii][vv],low_68[ii][vv],\
-                    axes_flat[zz],0.15,color='gainsboro')
-                plot_bands(bin_centers,upper_m,lower_m,axes_flat[zz])
-                plot_all_meds(bin_centers,med_plot_arr[ii][vv],axes_flat[zz],zz)
+                # lower_m  = B['{0}'.format(ii)][0]
+                # upper_m  = B['{0}'.format(ii)][1]
+                # plot_med_range(bin_centers,top_95[ii][vv],low_95[ii][vv],\
+                    # axes_flat[zz],0.05,color='lightsteelblue')
+                # plot_med_range(bin_centers,top_68[ii][vv],low_68[ii][vv],\
+                    # axes_flat[zz],0.15,color='gainsboro')
+                # plot_bands(bin_centers,upper_m,lower_m,axes_flat[zz])
+                plot_all_meds(bin_centers,med_plot_arr[ii][vv],axes_flat[zz],\
+                    zz)
                 plot_eco_meds(bin_centers,eco_medians[ii][0],\
                               eco_medians[ii][1],eco_medians[ii][2],\
                                                 axes_flat[zz],zz)
         zz   += 1
         
-plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
+plt.subplots_adjust(left=0.05, bottom=0.09, right=0.98, top=0.98,\
             hspace=0,wspace=0)
 plt.show()
 
-####################################################################################                
+###############################################################################              
 
 hist_low_info  = {}
 hist_high_info = {}
@@ -1187,24 +1356,28 @@ fig, axes = plt.subplots(nrows=nrow_num, ncols=ncol_num, \
             figsize=(150,200), sharex= True,sharey=True)
 axes_flat = axes.flatten()
 
+fig.text(0.02, 0.5,r'$\log\ \frac{N_{gal}}{N_{total}*dlogM_{*}}$', ha='center',
+    va='center',rotation='vertical',fontsize=20)
+
+
 for ii in range(len(mass_dat)):
     zz = 0
     for jj in range(len(neigh_vals)):
         for hh in range(3):
-            upper    = C['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][0]
-            lower    = C['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][1]
-            upper_2  = D['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][0]
-            lower_2  = D['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][1]
-            plot_bands(bin_centers,upper,lower,axes_flat[zz])
-            plot_bands(bin_centers,upper_2,lower_2,axes_flat[zz])
+            # upper    = C['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][0]
+            # lower    = C['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][1]
+            # upper_2  = D['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][0]
+            # lower_2  = D['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][1]
+            # plot_bands(bin_centers,upper,lower,axes_flat[zz])
+            # plot_bands(bin_centers,upper_2,lower_2,axes_flat[zz])
             plot_hists(mass_dat[ii][neigh_vals[jj]],neigh_vals[jj],bins,dlogM,\
                 axes_flat[zz], hh, zz)
             if ii == 0:
                 plot_eco_hists(eco_mass_dat[jj],bins,dlogM,\
-                axes_flat[zz],hh)
+                axes_flat[zz],hh,zz)
             zz += int(1)         
 
-plt.subplots_adjust(left=0.02, bottom=0.09, right=0.98, top=0.98,\
+plt.subplots_adjust(left=0.07, bottom=0.09, right=0.98, top=0.98,\
                     hspace=0, wspace=0)            
 
 plt.show()
@@ -1266,8 +1439,10 @@ for ii in range(len(mass_freq)+1):
                             p0=p0,sigma=eco_freq[1])
     else:
         ydata = (mass_freq[ii])
-        opt_v, est_cov = optimize.curve_fit(schechter_log_func,xdata,ydata,p0=p0)
-    schech_vals   = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],opt_v[2])
+        opt_v, est_cov = optimize.curve_fit(schechter_log_func,xdata,ydata,\
+                                    p0=p0)
+    schech_vals   = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
+                        opt_v[2])
     param_arr[ii] = opt_v
     param_arr = np.array(param_arr)
     
@@ -1346,7 +1521,7 @@ def param_finder(hist_counts,bin_centers):
 ###############################################################################
 ###Test that param_finder is working
 
-opt_v,test_arr = param_finder(eco_low[1][2],bin_centers,eco_low[1])
+opt_v,test_arr = param_finder(eco_low[1][2],bin_centers)
 schech_vals    = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
                     opt_v[2])
 
@@ -1365,6 +1540,7 @@ schech_vals    = schechter_log_func(10**bin_centers,opt_v[0],opt_v[1],\
 
 
 ###############################################################################
+
 def perc_calcs(mass,bins,dlogM):
     mass_counts, edges = np.histogram(mass,bins)
     mass_freq          = mass_counts/float(len(mass))/dlogM
@@ -1374,52 +1550,55 @@ def perc_calcs(mass,bins,dlogM):
 ###############################################################################
 
 def deciles(mass):
-    tenth_val     =  int(len(mass)/10)
+    dec_val     =  int(len(mass)/10)
     res_list      =  [[] for bb in range(10)]
 
     for aa in range(0,10):
         if aa == 9:
-            res_list[aa] = mass[aa*tenth_val:]
+            res_list[aa] = mass[aa*dec_val:]
         else:
-            res_list[aa] = mass[aa*tenth_val:(aa+1)*tenth_val]
+            res_list[aa] = mass[aa*dec_val:(aa+1)*dec_val]
 
     return res_list
 
 ###############################################################################
-eco_tenths = {}
+eco_dec = {}
 for cc in range(len(eco_mass_dat)):
-    eco_tenths[neigh_vals[cc]] = deciles(eco_mass_dat[cc])
+    eco_dec[neigh_vals[cc]] = deciles(eco_mass_dat[cc])
 
-# for ii in range(len(eco_tenths[1])):
-#     print len(eco_tenths[1][ii])   
-eco_tenths_smf = {}
+# for ii in range(len(eco_dec[1])):
+#     print len(eco_dec[1][ii])   
+
+eco_dec_smf = {}
 
 for ss in neigh_vals:
-    eco_tenths_smf[ss] = {}
-    for tt in range(len(eco_tenths[ss])):
-        eco_tenths_smf[ss][tt] = perc_calcs(eco_tenths[ss][tt],bins,dlogM)
+    eco_dec_smf[ss] = {}
+    for tt in range(len(eco_dec[ss])):
+        eco_dec_smf[ss][tt] = perc_calcs(eco_dec[ss][tt],bins,dlogM)
 
-eco_tenths_alpha    = {}
-eco_tenths_logMstar = {}
+eco_dec_alpha    = {}
+eco_dec_logMstar = {}
 
 for oo in neigh_vals:
-    eco_tenths_alpha[oo]    = []
-    eco_tenths_logMstar[oo] = []
-    for pp in range(len(eco_tenths[oo])):
-        opt_v, temp_res_arr = param_finder(eco_tenths_smf[oo][pp],bin_centers)
-        eco_tenths_alpha[oo].append(temp_res_arr[0])
-        eco_tenths_logMstar[oo].append(temp_res_arr[1])
+    eco_dec_alpha[oo]    = []
+    eco_dec_logMstar[oo] = []
+    for pp in range(len(eco_dec[oo])):
+        opt_v, temp_res_arr = param_finder(eco_dec_smf[oo][pp],bin_centers)
+        eco_dec_alpha[oo].append(temp_res_arr[0])
+        eco_dec_logMstar[oo].append(temp_res_arr[1])
 
 ten_x = range(1,11)
+
 # fig,ax = plt.subplots()
 # for ii in neigh_vals:
-#     ax.plot(ten_x,eco_tenths_alpha[ii])
+#     ax.plot(ten_x,eco_dec_alpha[ii])
 # ax.set_xlim(0,11)
 # plt.show()
 
 ###############################################################################
 
-def plot_deciles(dec_num,y_vals,ax,plot_idx,eco=False,logMstar=False,color='gray'):
+def plot_deciles(dec_num,y_vals,ax,plot_idx,eco=False,logMstar=False,\
+    color='gray'):
     if eco == True:
         titles = [1,2,3,5,10,20]
         ax.set_xlim(0,11)
@@ -1436,41 +1615,42 @@ def plot_deciles(dec_num,y_vals,ax,plot_idx,eco=False,logMstar=False,color='gray
         if plot_idx == 4:
             ax.set_xlabel('Decile',fontsize=18)
     if eco == True:
-        ax.plot(dec_num,y_vals,marker='o',linestyle='--',color=color)
+        ax.plot(dec_num,y_vals,marker='o',color=color,linewidth=2.5,\
+            markeredgecolor=color)
     else:
-        ax.plot(dec_num,y_vals,linestyle='--',color=color)
+        ax.plot(dec_num,y_vals,color=color,alpha=0.5)
 
 ###############################################################################
 
-nrow_num_mass = int(2)
-ncol_num_mass = int(3)
+# nrow_num_mass = int(2)
+# ncol_num_mass = int(3)
 
-fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
-        figsize=(100,200), sharex= True, sharey = True)
-axes_flat = axes.flatten()
+# fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
+#         figsize=(100,200), sharex= True, sharey = True)
+# axes_flat = axes.flatten()
 
-zz = int(0)
-while zz <=5:    
-    ii = neigh_vals[zz]
-    plot_deciles(ten_x,eco_tenths_logMstar[ii],axes_flat[zz],zz,only=True,\
-        logMstar=True)
-    zz   += 1
+# zz = int(0)
+# while zz <=5:    
+#     ii = neigh_vals[zz]
+#     plot_deciles(ten_x,eco_dec_logMstar[ii],axes_flat[zz],zz,eco=True,\
+#         logMstar=True)
+#     zz   += 1
         
-plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
-            hspace=0,wspace=0)
-plt.show()
+# plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
+#             hspace=0,wspace=0)
+# plt.show()
 
 ###############################################################################
 
 def quartiles(mass):
-    tenth_val     =  int(len(mass)/4)
+    dec_val     =  int(len(mass)/4)
     res_list      =  [[] for bb in range(4)]
 
     for aa in range(0,4):
         if aa == 3:
-            res_list[aa] = mass[aa*tenth_val:]
+            res_list[aa] = mass[aa*dec_val:]
         else:
-            res_list[aa] = mass[aa*tenth_val:(aa+1)*tenth_val]
+            res_list[aa] = mass[aa*dec_val:(aa+1)*dec_val]
 
     return res_list
 
@@ -1499,6 +1679,7 @@ for oo in neigh_vals:
         eco_quarts_logMstar[oo].append(temp_res_arr[1])
 
 quart_x = range(1,5)
+
 # fig,ax = plt.subplots()
 # for ii in neigh_vals:
 #     ax.plot(quart_x,eco_quarts_alpha[ii])
@@ -1507,7 +1688,8 @@ quart_x = range(1,5)
 
 ###############################################################################
 
-def plot_quartiles(quart_num,y_vals,ax,plot_idx,eco=False,logMstar=False,color='gray'):
+def plot_quartiles(quart_num,y_vals,ax,plot_idx,eco=False,logMstar=False,\
+    color='gray'):
     if eco == True:
         titles = [1,2,3,5,10,20]
         ax.set_xlim(0,5)
@@ -1524,30 +1706,33 @@ def plot_quartiles(quart_num,y_vals,ax,plot_idx,eco=False,logMstar=False,color='
         if plot_idx == 4:
             ax.set_xlabel('Quartiles',fontsize=18)
     if eco == True:
-        ax.plot(quart_num,y_vals,marker='o',linestyle='--',color=color)
+        ax.plot(quart_num,y_vals,marker='o',color=color,linewidth=2,\
+            markeredgecolor=color)
     else:
-        ax.plot(quart_num,y_vals,linestyle='--',color=color)
+        ax.plot(quart_num,y_vals,color=color)
 
 ###############################################################################    
 
-nrow_num_mass = int(2)
-ncol_num_mass = int(3)
+# nrow_num_mass = int(2)
+# ncol_num_mass = int(3)
 
-fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
-        figsize=(100,200), sharex= True, sharey = True)
-axes_flat = axes.flatten()
+# fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
+#         figsize=(100,200), sharex= True, sharey = True)
+# axes_flat = axes.flatten()
 
-zz = int(0)
-while zz <=5:    
-    ii = neigh_vals[zz]
-    plot_quartiles(quart_x,eco_quarts_logMstar[ii],axes_flat[zz],zz,only=True,\
-        logMstar=True)
-    zz   += 1
+# zz = int(0)
+# while zz <=5:    
+#     ii = neigh_vals[zz]
+#     plot_quartiles(quart_x,eco_quarts_logMstar[ii],axes_flat[zz],zz,eco=True,\
+#         logMstar=True)
+#     zz   += 1
         
-plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
-            hspace=0,wspace=0)
-plt.show()
+# plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
+#             hspace=0,wspace=0)
+# plt.show()
+
 ###############################################################################
+
 def quart_finder(mass,bins,dlogM,neigh_vals):
     quarts = {}
     for ii in neigh_vals:
@@ -1572,49 +1757,54 @@ def quart_finder(mass,bins,dlogM,neigh_vals):
             quarts_logMstar[oo].append(temp_res_arr[1])
 
     return quarts_alpha, quarts_logMstar
+
 ###############################################################################
-mock_quart_alpha_dict = {}
-mock_quart_logMstar_dict = {}
+
+mock_quarts_alpha_dict = {}
+mock_quarts_logMstar_dict = {}
 
 for jj in range(len(mass_dat)):
-    mock_quart_alpha_dict[jj], mock_quart_logMstar_dict[jj] = quart_finder\
+    mock_quarts_alpha_dict[jj], mock_quarts_logMstar_dict[jj] = quart_finder\
                                     (mass_dat[jj],bins,dlogM,neigh_vals)
 
 ###############################################################################
-def tenth_finder(mass,bins,dlogM,neigh_vals):
-    tenths = {}
-    for ii in neigh_vals:
-        tenths[ii] = deciles(mass[ii])
 
-    tenths_smf = {}
+def dec_finder(mass,bins,dlogM,neigh_vals):
+    decs = {}
+    for ii in neigh_vals:
+        decs[ii] = deciles(mass[ii])
+
+    decs_smf = {}
 
     for ss in neigh_vals:
-        tenths_smf[ss] = {}
-        for tt in range(len(tenths[ss])):
-            tenths_smf[ss][tt] = perc_calcs(tenths[ss][tt],bins,dlogM)
+        decs_smf[ss] = {}
+        for tt in range(len(decs[ss])):
+            decs_smf[ss][tt] = perc_calcs(decs[ss][tt],bins,dlogM)
 
-    tenths_alpha    = {}
-    tenths_logMstar = {}
+    decs_alpha    = {}
+    decs_logMstar = {}
 
     for oo in neigh_vals:
-        tenths_alpha[oo]    = []
-        tenths_logMstar[oo] = []
-        for pp in range(len(tenths[oo])):
-            opt_v, temp_res_arr = param_finder(tenths_smf[oo][pp],bin_centers)
-            tenths_alpha[oo].append(temp_res_arr[0])
-            tenths_logMstar[oo].append(temp_res_arr[1])
+        decs_alpha[oo]    = []
+        decs_logMstar[oo] = []
+        for pp in range(len(decs[oo])):
+            opt_v, temp_res_arr = param_finder(decs_smf[oo][pp],bin_centers)
+            decs_alpha[oo].append(temp_res_arr[0])
+            decs_logMstar[oo].append(temp_res_arr[1])
 
-    return tenths_alpha, tenths_logMstar
+    return decs_alpha, decs_logMstar
+
 ###############################################################################
 
 mock_dec_alpha_dict = {}
 mock_dec_logMstar_dict = {}
 
 for jj in range(len(mass_dat)):
-    mock_dec_alpha_dict[jj], mock_dec_logMstar_dict[jj] = tenth_finder\
+    mock_dec_alpha_dict[jj], mock_dec_logMstar_dict[jj] = dec_finder\
                                     (mass_dat[jj],bins,dlogM,neigh_vals)
 
 ###############################################################################
+###quartiles logMstar
 
 nrow_num_mass = int(2)
 ncol_num_mass = int(3)
@@ -1623,14 +1813,48 @@ fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
         figsize=(100,200), sharex= True, sharey = True)
 axes_flat = axes.flatten()
 
+
+fig.text(0.01, 0.5, '$\log\ M_{*}/M_{\odot}$', ha='center', \
+    va='center',rotation='vertical',fontsize=20)
+
+
 zz = int(0)
 while zz <=5:   
     ii = neigh_vals[zz]
     for ff in range(len(mass_dat)):
-        plot_quartiles(quart_x,mock_quart_logMstar_dict[ff][ii],axes_flat[zz],zz,\
-            logMstar=True)
+        plot_quartiles(quart_x,mock_quarts_logMstar_dict[ff][ii],axes_flat[zz],\
+            zz,logMstar=True)
     plot_quartiles(quart_x,eco_quarts_logMstar[ii],axes_flat[zz],zz,\
-        logMstar=True,color='limegreen',eco=True)
+        logMstar=True,color='crimson',eco=True)
+    zz   += 1
+        
+plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
+            hspace=0,wspace=0)
+plt.show()
+
+###############################################################################
+
+
+nrow_num_mass = int(2)
+ncol_num_mass = int(3)
+
+fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
+        figsize=(100,200), sharex= True, sharey = True)
+axes_flat = axes.flatten()
+
+
+fig.text(0.01, 0.5, '$\log\ M_{*}/M_{\odot}$', ha='center', \
+    va='center',rotation='vertical',fontsize=20)
+
+
+zz = int(0)
+while zz <=5:   
+    ii = neigh_vals[zz]
+    for ff in range(len(mass_dat)):
+        plot_deciles(ten_x,mock_dec_logMstar_dict[ff][ii],axes_flat[zz],\
+            zz,logMstar=True)
+    plot_deciles(ten_x,eco_dec_logMstar[ii],axes_flat[zz],zz,\
+        logMstar=True,color='crimson',eco=True)
     zz   += 1
         
 plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
@@ -1648,14 +1872,43 @@ fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
         figsize=(100,200), sharex= True, sharey = True)
 axes_flat = axes.flatten()
 
+fig.text(0.01, 0.5, r'$\alpha$', ha='center', \
+    va='center',rotation='vertical',fontsize=25)
+
 zz = int(0)
 while zz <=5:   
     ii = neigh_vals[zz]
     for ff in range(len(mass_dat)):
-        plot_deciles(ten_x,mock_dec_logMstar_dict[ff][ii],axes_flat[zz],zz,\
-            logMstar=True)
-    plot_deciles(ten_x,eco_tenths_logMstar[ii],axes_flat[zz],zz,\
-        logMstar=True,color='limegreen',eco=True)
+        plot_deciles(ten_x,mock_dec_alpha_dict[ff][ii],axes_flat[zz],zz,\
+            logMstar=False)
+    plot_deciles(ten_x,eco_dec_alpha[ii],axes_flat[zz],zz,\
+        logMstar=False,color='crimson',eco=True)
+    zz   += 1
+        
+plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\
+            hspace=0,wspace=0)
+plt.show()
+
+###############################################################################
+
+nrow_num_mass = int(2)
+ncol_num_mass = int(3)
+
+fig, axes = plt.subplots(nrows=nrow_num_mass, ncols=ncol_num_mass, \
+        figsize=(100,200), sharex= True, sharey = True)
+axes_flat = axes.flatten()
+
+fig.text(0.01, 0.5, r'$\alpha$', ha='center', \
+    va='center',rotation='vertical',fontsize=25)
+
+zz = int(0)
+while zz <=5:   
+    ii = neigh_vals[zz]
+    for ff in range(len(mass_dat)):
+        plot_quartiles(quart_x,mock_quarts_alpha_dict[ff][ii],axes_flat[zz],zz,\
+            logMstar=False)
+    plot_quartiles(quart_x,eco_quarts_alpha[ii],axes_flat[zz],zz,\
+        logMstar=False,color='crimson',eco=True)
     zz   += 1
         
 plt.subplots_adjust(left=0.05, bottom=0.09, right=1.00, top=1.00,\

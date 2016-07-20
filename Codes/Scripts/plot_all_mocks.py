@@ -195,7 +195,7 @@ def calc_dens(n_val,r_val):
 
 ###############################################################################
 
-def plot_calcs(mass,bins,dlogM,mass_err=False,ratio_err=False):
+def plot_calcs(mass,bins,dlogM):
     """
     Returns values for plotting the stellar mass function and 
         mass ratios
@@ -209,20 +209,6 @@ def plot_calcs(mass,bins,dlogM,mass_err=False,ratio_err=False):
         by the histogram function
     dlogM: float-like
         The log difference between bin edges
-    
-    Optional
-    --------
-    mass_err  == True
-        Calculates the Poisson errors on the stellar mass function.
-        Returns mass_freq as a list with 2 array elements, the first being
-        the stellar mass function values, the second being the errors.
-    ratio_err == True
-        Calculates the Poisson errors on the density-based, mass ratios.
-        Creates empty list and appends ratio error arrays to it as they 
-        are generated. Returns ratio_dict as a list. The first element is 
-        a dictionary with the ratio values to be plotted. The second is a
-        three element list. Each element is an array with the error values 
-        for each of the three density-cut ratios.
 
     Returns
     -------
@@ -241,18 +227,20 @@ def plot_calcs(mass,bins,dlogM,mass_err=False,ratio_err=False):
     bin_centers        = 0.5*(edges[:-1]+edges[1:])
 
     mass_freq  = mass_counts/float(len(mass))/dlogM
+    
+#     non_zero   = (mass_freq!=0)
 
     ratio_dict = {}
     frac_val   = [2,4,10]
-    
-    if ratio_err == True:
-        yerr = []
+
+    yerr = []
+    bin_centers_fin = []
 
     for ii in frac_val:
         ratio_dict[ii] = {}
-
-        # Calculations for the lower density cut
         frac_data      = int(len(mass)/ii)
+        
+        # Calculations for the lower density cut
         frac_mass      = mass[0:frac_data]
         counts, edges  = np.histogram(frac_mass,bins)
 
@@ -262,25 +250,42 @@ def plot_calcs(mass,bins,dlogM,mass_err=False,ratio_err=False):
 
         # Ratio determination
         ratio_counts   = (1.*counts_2)/(1.*counts)
-        ratio_dict[ii] = ratio_counts
+        
+        non_zero = np.isfinite(ratio_counts)
 
-        if ratio_err == True:
-            yerr.append((counts_2*1.)/(counts*1.)*\
-                np.sqrt(1./counts + 1./counts_2))
+        ratio_counts_1 = ratio_counts[non_zero]
+        
+#         print 'len ratio_counts: {0}'.format(len(ratio_counts_1))
+        
+        ratio_dict[ii] = ratio_counts_1
+        
+        temp_yerr = (counts_2*1.)/(counts*1.)*\
+            np.sqrt(1./counts + 1./counts_2)
+            
+        temp_yerr_1 = temp_yerr[non_zero]
+        
+#         print 'len yerr: {0}'.format(len(temp_yerr_1))
 
-    if mass_err == True:
-        mass_freq_list     = [[] for xx in xrange(2)]
-        mass_freq_list[0]  = mass_freq
-        mass_freq_list[1]  = np.sqrt(mass_counts)/float(len(mass))/dlogM
-        mass_freq          = np.array(mass_freq_list)
+        yerr.append(temp_yerr_1)
+        
+        bin_centers_1 = bin_centers[non_zero]
+        
+#         print 'len bin_cens: {0}'.format(len(bin_centers_1))
+        
+        bin_centers_fin.append(bin_centers_1)
+        
 
-    if ratio_err == True:
-        ratio_dict_list    = [[] for xx in range(2)]
-        ratio_dict_list[0] = ratio_dict
-        ratio_dict_list[1] = yerr
-        ratio_dict         = ratio_dict_list
+    mass_freq_list     = [[] for xx in xrange(2)]
+    mass_freq_list[0]  = mass_freq
+    mass_freq_list[1]  = np.sqrt(mass_counts)/float(len(mass))/dlogM
+    mass_freq          = np.array(mass_freq_list)
 
-    return bin_centers, mass_freq, ratio_dict
+    ratio_dict_list    = [[] for xx in range(2)]
+    ratio_dict_list[0] = ratio_dict
+    ratio_dict_list[1] = yerr
+    ratio_dict         = ratio_dict_list
+
+    return bin_centers, mass_freq, ratio_dict, bin_centers_fin
 
 ###############################################################################
 
@@ -318,6 +323,8 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
         An array with the median distance to the Nth nearest neighbor from 
         all the galaxies in each of the bins
     """
+    frac_vals    = np.array([2,4,10])
+    
     edges        = bins
 
     # print 'length bins:'
@@ -327,38 +334,14 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
     digitized   -= int(1)
 
     bin_nums          = np.unique(digitized)
-    bin_nums_list     = list(bin_nums)
+#     bin_nums_list     = list(bin_nums)
 
-    # if 12 not in bin_nums:
-    #     bin_nums.append(12)
-    # if 13 in bin_nums:
-    #     bin_nums.remove(13
+# #     if (len(bins)) in bin_nums_list:
+# #         bin_nums_list.remove(len(bins))
+#     # print 'removed'
+#     # print bin_nums_list
 
-    # if 13 not in bin_nums:
-    #     bin_nums.append(13)
-    # if 14 in bin_nums:
-    #     bin_nums.remove(14)
-
-    for jj in range(len(bins)-1):
-        if jj not in bin_nums:
-            bin_nums_list.append(jj)
-    # print 'appended'
-    # print bin_nums_list
-
-    if (len(bins)-1) in bin_nums_list:
-        bin_nums_list.remove(len(bins)-1)
-    # print 'removed'
-    # print bin_nums_list
-
-    if (len(bins)) in bin_nums_list:
-        bin_nums_list.remove(len(bins))
-    # print 'removed'
-    # print bin_nums_list
-
-    bin_nums = np.array(bin_nums_list)
-
-    mean_mass = np.array([np.mean(mass_dist.T[0][digitized==ii]) \
-                for ii in bin_nums])
+#     bin_nums = np.array(bin_nums_list)
 
     for ii in bin_nums:
         if len(mass_dist.T[kk][digitized==ii]) == 0:
@@ -395,10 +378,11 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
         med_list[2] = high_err_test
         medians     = np.array(med_list)
 
-    return medians  
+    return medians    
+    
 
 ###############################################################################
-def hist_calcs(mass,bins,dlogM,eco=False):
+def hist_calcs(mass,bins,dlogM):
     """
     Returns dictionaries with the counts for the upper
         and lower density portions; calculates the 
@@ -431,13 +415,12 @@ def hist_calcs(mass,bins,dlogM,eco=False):
     frac_val  = np.array([2,4,10])
     frac_dict = {2:0,4:1,10:2}
     
-    if eco == True:
-        low_err   = [[] for xx in xrange(len(frac_val))]
-        high_err  = [[] for xx in xrange(len(frac_val))]
+    low_err   = [[] for xx in xrange(len(frac_val))]
+    high_err  = [[] for xx in xrange(len(frac_val))]
     
     for ii in frac_val:
-        hist_dict_low[ii]  = {}
-        hist_dict_high[ii] = {}
+#         hist_dict_low[ii]  = {}
+#         hist_dict_high[ii] = {}
     
         frac_data     = int(len(mass)/ii)
         
@@ -445,26 +428,59 @@ def hist_calcs(mass,bins,dlogM,eco=False):
         counts, edges = np.histogram(frac_mass,bins)
         low_counts    = (counts/float(len(frac_mass))/dlogM)
         
-        if eco == True:
-            low_err[frac_dict[ii]]    = np.sqrt(counts)/len(frac_mass)/dlogM
+        non_zero = (low_counts!=0)
+        low_counts_1 = low_counts[non_zero]
+        hist_dict_low[ii]  = low_counts_1
         
-        hist_dict_low[ii]  = low_counts
-
+        low_err = np.sqrt(counts)/len(frac_mass)/dlogM
+        low_err_1 = low_err[non_zero]
+        err_key = 'err_{0}'.format(ii)
+        hist_dict_low[err_key] = low_err_1
+        
         frac_mass_2        = mass[-frac_data:]
         counts_2, edges_2  = np.histogram(frac_mass_2,bins)
         high_counts        = (counts_2/float(len(frac_mass_2))/dlogM)
         
-        if eco == True:
-            high_err[frac_dict[ii]]   = np.sqrt(counts_2)/len(frac_mass_2)/\
-                                            dlogM
+        non_zero = (high_counts!=0)
+        high_counts_1 = high_counts[non_zero]
+        hist_dict_high[ii] = high_counts_1
         
-        hist_dict_high[ii] = high_counts
-        
-    if eco == True:
-        hist_dict_low['low_err']      = low_err
-        hist_dict_high['high_err']    = high_err
+        high_err = np.sqrt(counts_2)/len(frac_mass_2)/dlogM
+        high_err_1 = high_err[non_zero]
+        hist_dict_high[err_key] = high_err_1
     
     return hist_dict_low, hist_dict_high
+
+###############################################################################    
+
+def mean_bin_mass(mass_dist,bins):
+    """
+    Returns median distance to Nth nearest neighbor
+
+    Parameters
+    ----------
+    mass_dist: array-like
+        An array with mass values in at index 0 (when transformed) 
+    bins: array=like
+        A 1D array with the values which will be used as the bin edges     
+
+    Returns
+    -------
+
+    """
+    edges        = bins
+
+    digitized    = np.digitize(mass_dist.T[0],edges)
+    digitized   -= int(1)
+
+    bin_nums          = np.unique(digitized)
+
+    mean_mass = np.array([np.mean(mass_dist.T[0][digitized==ii]) \
+                for ii in bin_nums])
+
+    return mean_mass 
+
+
 ###############################################################################
 
 def plot_all_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx):
@@ -882,38 +898,52 @@ bins = Bins_array_create(min_max_mass_arr,dlogM)
 bins+= 0.1
 bins_list = list(bins)
 for ii in bins:
-    if ii > 11.7:
+    if ii > 11.77:
         bins_list.remove(ii)
 
 bins = np.array(bins_list)
 
 num_of_bins = int(len(bins) - 1) 
 
-ra_arr   = np.array([(np.array(PD_comp[ii])).T[0] \
+ra_arr  = np.array([(PD_comp[ii].ra) \
     for ii in range(len(PD_comp))])
-dec_arr  = np.array([(np.array(PD_comp[ii])).T[1] \
+
+dec_arr  = np.array([(PD_comp[ii].dec) \
     for ii in range(len(PD_comp))])
-cz_arr   = np.array([(np.array(PD_comp[ii])).T[2] \
+
+cz_arr  = np.array([(PD_comp[ii].cz) \
     for ii in range(len(PD_comp))])
-mass_arr = np.array([(np.array(PD_comp[ii])).T[3] \
+
+mass_arr  = np.array([(PD_comp[ii].logMstar) \
     for ii in range(len(PD_comp))])
+
+halo_id_arr  = np.array([(PD_comp[ii].Halo_ID) \
+    for ii in range(len(PD_comp))])
+
 
 coords_test = np.array([sph_to_cart(ra_arr[vv],dec_arr[vv],cz_arr[vv]) \
                 for vv in range(len(ECO_cats))])
 
 neigh_vals  = np.array([1,2,3,5,10,20])
 
+nn_arr_temp = [[] for uu in xrange(len(coords_test))]
 nn_arr      = [[] for xx in xrange(len(coords_test))]
 nn_arr_nn   = [[] for yy in xrange(len(neigh_vals))]
+nn_idx      = [[] for zz in xrange(len(coords_test))]
 
 for vv in range(len(coords_test)):
-    nn_arr[vv] = spatial.cKDTree(coords_test[vv])
-    nn_arr[vv] = np.array(nn_arr[vv].query(coords_test[vv],21)[0])
+    nn_arr_temp[vv] = spatial.cKDTree(coords_test[vv])
+    nn_arr[vv] = np.array(nn_arr_temp[vv].query(coords_test[vv],21)[0])
+    nn_idx[vv] = np.array(nn_arr_temp[vv].query(coords_test[vv],21)[1])
+    
 
 nn_specs       = [(np.array(nn_arr).T[ii].T[neigh_vals].T) for ii in \
                     range(len(coords_test))]
 nn_mass_dist   = np.array([(np.column_stack((mass_arr[qq],nn_specs[qq]))) \
                     for qq in range(len(coords_test))])
+
+nn_neigh_idx      = np.array([(np.array(nn_idx).T[ii].T[neigh_vals].T) for ii in \
+                    range(len(coords_test))])
 
 ###############################################################################
 sat_cols    = (13,25)
@@ -934,6 +964,8 @@ gal_tot   = np.array([(len(SF_PD_comp[ii])) for ii in range(len(SF_PD_comp))])
 
 print 'SAT_FRAC = {0}'.format(sats_num/gal_tot)
 
+
+
 ###############################################################################
 
 nn_dist    = {}
@@ -942,6 +974,7 @@ mass_dat   = {}
 ratio_info = {}
 
 mass_freq  = [[] for xx in xrange(len(coords_test))]
+bin_non_zero  = [[] for xx in xrange(len(coords_test))]
 
 for ii in range(len(coords_test)):
     nn_dist[ii]    = {}
@@ -963,8 +996,13 @@ for ii in range(len(coords_test)):
         mass_dat[ii][(neigh_vals[jj])] = (nn_dens[ii][neigh_vals[jj]]\
                                             [idx].T[0])
 
-        bin_centers, mass_freq[ii], ratio_info[ii][neigh_vals[jj]] = \
+        bin_non_zero[ii], mass_freq[ii], ratio_info[ii][neigh_vals[jj]] = \
                             plot_calcs(mass_dat[ii][neigh_vals[jj]],bins,dlogM)
+
+# for ii in range(len(bin_non_zero)):
+#     print len(bin_non_zero[ii])
+#     for jj in range(len(mass_freq[ii])):
+#         print len(mass_freq[ii][jj])
 
 all_mock_meds = [[] for xx in range(len(nn_mass_dist))]
 all_mock_mass_means = [[] for xx in range(len(nn_mass_dist))]
@@ -972,7 +1010,11 @@ all_mock_mass_means = [[] for xx in range(len(nn_mass_dist))]
 for vv in range(len(nn_mass_dist)):
     all_mock_meds[vv] = [(bin_func(nn_mass_dist[vv],bins,(jj+1))) \
                             for jj in range(len(nn_mass_dist[vv].T)-1)]
-    all_mock_mass_means[vv] = (mean_bin_mass(nn_mass_dist[vv],bins))                        
+    all_mock_mass_means[vv] = (mean_bin_mass(nn_mass_dist[vv],bins))    
+
+# for ii in range(len(all_mock_meds)):
+#     for jj in range(len(all_mock_meds[ii])):
+#         print len(all_mock_meds[ii][jj][0])
     
 med_plot_arr = [([[] for yy in xrange(len(nn_mass_dist))]) \
                                             for xx in xrange(len(neigh_vals))]
@@ -985,7 +1027,7 @@ for ii in range(len(neigh_vals)):
 #     for jj in range(len(nn_mass_dist)):
 #         print len(all_mock_meds[jj][ii])
 
-mass_freq_plot  = (np.array(mass_freq))
+mass_freq_plot  = (np.array(mass_freq[0]))
 max_lim = [[] for xx in range(len(mass_freq_plot.T))]
 min_lim = [[] for xx in range(len(mass_freq_plot.T))]
 for jj in range(len(mass_freq_plot.T)):
@@ -1124,8 +1166,8 @@ eco_ratio_info    = [[] for xx in xrange(len(eco_mass_dat))]
 
 
 for qq in range(len(eco_mass_dat)):
-    bin_centers, eco_freq, eco_ratio_info[qq] = plot_calcs(eco_mass_dat[qq],\
-                                    bins,dlogM,mass_err=True,ratio_err=True)
+    centers_non_zero, eco_freq, eco_ratio_info[qq] = plot_calcs(eco_mass_dat[qq],\
+                                    bins,dlogM)
 
 eco_medians   = [[] for xx in xrange(len(eco_mass_dat))]   
 
@@ -1480,7 +1522,7 @@ for jj in range(len(neigh_vals)):
     eco_low[neigh_vals[jj]]  = {}
     eco_high[neigh_vals[jj]] = {}
     eco_low[neigh_vals[jj]], eco_high[neigh_vals[jj]] = hist_calcs\
-    (eco_mass_dat[jj],bins,dlogM,eco=True)
+    (eco_mass_dat[jj],bins,dlogM)
 
 
 ###############################################################################
@@ -1940,60 +1982,14 @@ def schechter_real_func(mean_of_mass_bin,bins,phi_star,alpha,Mstar):
 
 ###############################################################################
 
-def mean_bin_mass(mass_dist,bins):
-    """
-    Returns median distance to Nth nearest neighbor
-
-    Parameters
-    ----------
-    mass_dist: array-like
-        An array with mass values in at index 0 (when transformed) 
-    bins: array=like
-        A 1D array with the values which will be used as the bin edges     
-
-    Returns
-    -------
-
-    """
-    edges        = bins
-
-    digitized    = np.digitize(mass_dist.T[0],edges)
-    digitized   -= int(1)
-
-    bin_nums          = np.unique(digitized)
-    bin_nums_list     = list(bin_nums)
-
-    for jj in range(len(bins)-1):
-        if jj not in bin_nums:
-            bin_nums_list.append(jj)
-
-    if (len(bins)-1) in bin_nums_list:
-        bin_nums_list.remove(len(bins)-1)
-
-    if (len(bins)) in bin_nums_list:
-        bin_nums_list.remove(len(bins))
-
-    bin_nums = np.array(bin_nums_list)
-
-    mean_mass = np.array([np.mean(mass_dist.T[0][digitized==ii]) \
-                for ii in bin_nums])
-
-    return mean_mass 
-
 
 
 ###############################################################################
 
-def param_finder(hist_counts,bin_centers):
+def find_params(bin_int,mean_mass,count_err):
     """
     Parameters
     ----------
-    hist-counts: array-like
-        An array with stellar mass function values which will be used in the 
-        Schechter function parameterization
-    bin_centers: array-like
-        An array with the same number of values as hist_counts; used as
-        independent variable in Schechter function
 
     Returns
     -------
@@ -2004,10 +2000,10 @@ def param_finder(hist_counts,bin_centers):
 
 
     """
-    xdata = 10**bin_centers
+    xdata = 10**mean_mass
     p0    = (1,-1.05,10**10.64)
-    opt_v,est_cov = optimize.curve_fit(schechter_log_func,xdata,\
-                            hist_counts,p0=p0)
+    opt_v,est_cov = optimize.curve_fit(schechter_real_func,xdata,\
+                            bin_int,p0=p0,sigma=count_err)
     alpha   = opt_v[1]
     log_m_star    = np.log10(opt_v[2])
     res_arr = np.array([alpha,log_m_star])
@@ -2016,8 +2012,97 @@ def param_finder(hist_counts,bin_centers):
 
 
 ###############################################################################
+
 ###############################################################################
+
+truth_vals = {}
+for ii in range(len(halo_id_arr)):
+    truth_vals[ii] = {}
+    for jj in neigh_vals:
+        halo_id_neigh = halo_id_arr[ii][nn_neigh_idx[ii].T[neigh_dict[jj]]].values
+        truth_vals[ii][jj] = halo_id_neigh==halo_id_arr[ii].values
+
 ###############################################################################
+
+halo_frac = {}
+for ii in range(len(mass_arr)):
+    halo_frac[ii] = {}
+    mass_binning = np.digitize(mass_arr[ii],bins)
+    bins_to_use = list(np.unique(mass_binning))
+    if (len(bins)-1) not in bins_to_use:
+        bins_to_use.append(len(bins)-1)
+    if len(bins) in bins_to_use:
+        bins_to_use.remove(len(bins))
+    for jj in neigh_vals:
+        one_zero = truth_vals[ii][jj].astype(int)
+        frac = []
+        for xx in bins_to_use:
+            truth_binning = one_zero[mass_binning==xx]
+            num_in_bin = len(truth_binning)
+            if num_in_bin == 0:
+                num_in_bin = np.nan
+            num_same_halo = np.count_nonzero(truth_binning==1)
+            frac.append(num_same_halo/(1.*num_in_bin))
+        halo_frac[ii][jj] = frac
+
+###############################################################################        
+
+nn_dict   = {1:0,2:1,3:2,5:3,10:4,20:5}
+
+mean_mock_halo_frac = {}
+
+for ii in neigh_vals:
+    for jj in range(len(halo_frac)):
+        bin_str = '{0}'.format(ii)
+        oo_arr = halo_frac[jj][ii]
+        n_o_elem = len(oo_arr)
+        if jj == 0:
+            oo_tot = np.zeros((n_o_elem,1))
+        oo_tot = np.insert(oo_tot,len(oo_tot.T),oo_arr,1)
+    oo_tot = np.array(np.delete(oo_tot,0,axis=1))
+    oo_tot_mean = [np.mean(oo_tot[uu]) for uu in xrange(len(oo_tot))]
+    oo_tot_std  = [np.std(oo_tot[uu])/np.sqrt(len(halo_frac)) for uu in \
+                    xrange(len(oo_tot))]
+    mean_mock_halo_frac[bin_str] = [oo_tot_mean,oo_tot_std]
+
+###############################################################################
+
+def plot_halo_frac(bin_centers,y_vals,ax,plot_idx):
+    titles = [1,2,3,5,10,20]
+    ax.set_xlim(9.1,11.9)
+    ax.set_xticks(np.arange(9.5,12.,0.5)) 
+    ax.tick_params(axis='x', which='major', labelsize=16)
+    title_here = 'n = {0}'.format(titles[plot_idx])
+    ax.text(0.05, 0.95, title_here,horizontalalignment='left',\
+            verticalalignment='top',transform=ax.transAxes,fontsize=18)
+    if plot_idx == 4:
+        ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=20)
+    ax.plot(bin_centers,y_vals,color='silver')
+    
+def plot_mean_halo_frac(bin_centers,mean_vals,ax,std):
+    ax.errorbar(bin_centers,mean_vals,yerr=std,color='deeppink')
+
+###############################################################################
+
+nrow = int(2)
+ncol = int(3)
+
+fig,axes = plt.subplots(nrows=nrow,ncols=ncol,\
+                        figsize=(100,200),sharex=True)
+axes_flat = axes.flatten()
+
+zz = int(0)
+while zz <=4:
+    for jj in neigh_vals:
+        for kk in range(len(halo_frac)):
+            plot_halo_frac(bin_centers,halo_frac[kk][jj],axes_flat[zz],zz)
+        nn_str = '{0}'.format(jj)
+        plot_mean_halo_frac(bin_centers,mean_mock_halo_frac[nn_str][0],axes_flat[zz],mean_mock_halo_frac[nn_str][1])
+        zz += 1
+
+plt.subplots_adjust(top=0.97,bottom=0.1,left=0.03,right=0.99,hspace=0.10,wspace=0.12)           
+plt.show()            
+
 ###############################################################################
 ###############################################################################
 ###############################################################################

@@ -851,6 +851,8 @@ dirpath += r"scatter_mocks\Resolve_plk_5001_so_mvir_scatter0p1_ECO_Mocks"
 usecols  = (0,1,8,13)
 dlogM    = 0.2
 
+##Add in column 4, HALO ID
+
 ##############################################################################
 ##############################################################################
 ##############################################################################
@@ -879,7 +881,7 @@ bins = Bins_array_create(min_max_mass_arr,dlogM)
 bins+= 0.1
 bins_list = list(bins)
 for ii in bins:
-    if ii > 11.9:
+    if ii > 11.7:
         bins_list.remove(ii)
 
 bins = np.array(bins_list)

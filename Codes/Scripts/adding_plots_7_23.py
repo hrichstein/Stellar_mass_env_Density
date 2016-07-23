@@ -521,14 +521,6 @@ def mean_bin_mass(mass_dist,bins,kk):
 
     return mean_mass 
 
-###note, this should use the same bin_centers as provided by the 
-#median from bin_func
-
-
-# In[406]:
-
-eco_mass_dist.T[0]
-
 
 # In[259]:
 
@@ -540,6 +532,12 @@ dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
 dirpath += r"\Stellar_mass_env_Density\Catalogs"
 dirpath += r"\Mocks_Scatter_Abundance_Matching"
 dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p3_ECO_Mocks"
+
+
+figsave_path = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
+figsave_path+= r"\Stellar_mass_env_Density\Plots"
+figsave_path+= r"\Abundance_matched"
+figsave_path+= r"\three_dec"
 
 
 usecols  = (0,1,4,8,13)
@@ -571,17 +569,6 @@ for ii in range(len(ECO_cats))]
 [(PD_comp[ii].reset_index(drop=True,inplace=True)) \
 for ii in range(len(ECO_cats))]
 
-
-# In[261]:
-
-for ii in range(len(ECO_cats)):
-    print len(PD_comp[ii][PD_comp[ii].logMstar >=11.5])
-# for ii in range(len(ECO_cats)):
-#     print PD_comp[ii]
-
-
-# In[262]:
-
 min_max_mass_arr = []
 
 for ii in range(len(PD_comp)):
@@ -598,6 +585,8 @@ for ii in bins:
         bins_list.remove(ii)
 
 bins = np.array(bins_list)
+
+bin_centers = 0.5 * (bins[:-1]+bins[1:])
 
 num_of_bins = int(len(bins) - 1) 
 
@@ -689,36 +678,64 @@ for ii in neigh_vals:
     mean_mock_halo_frac[bin_str] = [oo_tot_mean,oo_tot_std]
 
 
-def plot_halo_frac(bin_centers,y_vals,ax,plot_idx):
+def plot_halo_frac(bin_centers,y_vals,ax,plot_idx,text=False):
     titles = [1,2,3,5,10,20]
     ax.set_xlim(9.1,11.9)
     ax.set_xticks(np.arange(9.5,12.,0.5)) 
     ax.tick_params(axis='x', which='major', labelsize=16)
-    title_here = 'n = {0}'.format(titles[plot_idx])
-    ax.text(0.05, 0.95, title_here,horizontalalignment='left',            \
-        verticalalignment='top',transform=ax.transAxes,fontsize=18)
+    if text == True:
+        title_here = 'n = {0}'.format(titles[plot_idx])
+        ax.text(0.05, 0.95, title_here,horizontalalignment='left',            \
+            verticalalignment='top',transform=ax.transAxes,fontsize=18)
     if plot_idx == 4:
         ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=20)
     ax.plot(bin_centers,y_vals,color='silver')
     
 def plot_mean_halo_frac(bin_centers,mean_vals,ax,std):
-    ax.errorbar(bin_centers,mean_vals,yerr=std,color='deeppink')
+    ax.errorbar(bin_centers,mean_vals,yerr=std,color='darkmagenta')
 
 
-# In[269]:
 
-mass_bin_test = np.digitize(mass_arr[0],bins)
-one_zero_test = truth_vals[0][1].astype(int)
+# In[56]:
 
-test_arr_ones = one_zero_test[mass_bin_test==1]
+nrow = int(2)
+ncol = int(3)
 
-print len(test_arr_ones)
-print len(mass_bin_test)
+fig,axes = plt.subplots(nrows=nrow,ncols=ncol,                        \
+    figsize=(100,200),sharex=True)
+axes_flat = axes.flatten()
 
-print np.count_nonzero(test_arr_ones==1)
+zz = int(0)
+while zz <=4:
+    for jj in neigh_vals:
+        for kk in range(len(halo_frac)):
+            if kk == 0:
+                value = True
+            else:
+                value = False
+            plot_halo_frac(bin_centers,halo_frac[kk][jj],axes_flat[zz],zz,\
+                text = value)
+        nn_str = '{0}'.format(jj)
+        plot_mean_halo_frac(bin_centers,mean_mock_halo_frac[nn_str][0],\
+            axes_flat[zz],mean_mock_halo_frac[nn_str][1])
+        # save_means = open("halo_frac_means.txt", "a")
+        # save_means.write\
+        # (("{0} + \n + 'nn_val' + {1} + 'mean' {2} \n + 'error' {3}")\
+        # .format(dirpath,jj,mean_mock_halo_frac[nn_str][0],\
+        #     mean_mock_halo_frac[nn_str][1]))
+        # save_means.close()
+        zz += 1
+
+plt.subplots_adjust(top=0.97,bottom=0.1,left=0.03,right=0.99,hspace=0.10,\
+    wspace=0.12)     
+
+# plt.savefig(figsave_path + r"\halo_frac_means")
+
+plt.show()      
 
 
 # In[342]:
+
 
 # nn_dist    = {}
 nn_dens    = {}
@@ -741,7 +758,7 @@ for ii in range(len(coords_test)):
 #         nn_dist[ii][(neigh_vals[jj])]  = np.array(nn_mass_dist[ii].T\
 #                                             [range(1,len(neigh_vals)+1)[jj]])
         nn_dens[ii][(neigh_vals[jj])]  = np.column_stack((nn_mass_dist[ii].T\
-                                                [0],calc_dens(neigh_vals[jj]\
+                                                [0],calc_dens(neigh_vals[jj],\
                         nn_mass_dist[ii].T[range(1,len(neigh_vals)+1)[jj]])))
 
         idx = np.array([nn_dens[ii][neigh_vals[jj]].T[1].argsort()])
@@ -787,31 +804,10 @@ for jj in range(len(mass_freq_plot.T)):
     max_lim[jj] = max(mass_freq_plot.T[jj][0])
     min_lim[jj] = min(mass_freq_plot.T[jj][0])
 
-# In[278]:
-
-# for ii in range(len(neigh_vals)):
-for jj in range(len(nn_mass_dist)):
-    print len(all_mock_meds[jj])
-
-
-# In[279]:
-
-print all_mock_meds
-
-
-# In[280]:
-
-bin_cens_diff
-
-
-bins_curve_fit = bins.copy()
 global bins_curve_fit
 
-def abc():
-    print bins_curve_fit
-    
-abc()
-
+bins_curve_fit = bins.copy()
+# global bins_curve_fit
 
 # In[281]:
 
@@ -1039,18 +1035,6 @@ def mean_perc_mass(mass,bins):
     return mean_mass 
 
 
-# In[414]:
-
-eco_one_perc_means = mean_perc_mass(eco_dec[1][0],bins)
-
-
-# In[407]:
-
-eco_mass_dist.T[0][]
-
-
-# In[292]:
-
 eco_dec = {}
 for cc in range(len(eco_mass_dat)):
     eco_dec[neigh_vals[cc]] = deciles(eco_mass_dat[cc])
@@ -1082,12 +1066,15 @@ ax.tick_params(axis='both', labelsize=14)
 for ii in range(len(mass_freq)):
     ax.plot(bin_centers,mass_freq[ii][0],color='silver')
     ax.fill_between(bin_centers,max_lim,min_lim,color='silver',alpha=0.1)
-ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='dodgerblue',\
+ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='darkmagenta',\
             linewidth=2,label='ECO')
 ax.legend(loc='best')
 
 plt.subplots_adjust(left=0.15, bottom=0.1, right=0.85, top=0.94,\
                     hspace=0.2,wspace=0.2)
+
+plt.savefig(figsave_path + r"\stellar_mass_func")
+
 plt.show()
 
 
@@ -1168,18 +1155,6 @@ def schech_integral(edge_1,edge_2,phi_star,alpha,Mstar):
     return bin_integral
 
 
-# In[444]:
-
-schech_integral(10**9.1,10**9.3,opt_v[0],opt_v[1],opt_v[2])
-
-
-# In[382]:
-
-bins_curve_fit
-
-
-# In[42]:
-
 def schech_step_3(xdata,phi_star,alpha,Mstar):
     """
     xdata: array-like
@@ -1227,93 +1202,20 @@ def find_params(bin_int,mean_mass,count_err):
 
     return opt_v, res_arr, perr, est_cov
 
-
-# In[417]:
-
-opt_v_test, res_arr,perr,est_cov = find_params(eco_dec_smf[1][0],\
-    eco_one_perc_means,eco_dec_err[1][0])
-
-
-# In[433]:
-
-schechter_real_func(10**eco_one_perc_means,opt_v_test[0],\
-    (opt_v_test[1]+1),opt_v_test[2])
-
-
-# In[436]:
-
-m_over_mstar_test = 10**eco_mass_means[0]/10**10.64
-res_arr    = (opt_v[0]) * (m_over_mstar_test**(opt_v[1]+1)) *\
-                         np.exp(- m_over_mstar_test)
-print res_arr
-
-
-# In[428]:
-
-schechter_real_func(10**eco_mass_means[0],opt_v[0],(opt_v[1]),opt_v[2])
-
-
-# In[398]:
-
-print len(eco_dec_smf[1][0])
-print len(eco_mass_means[0][:-3])
-
-
-# In[403]:
-
-len(eco_freq[0])
-
-
-# In[441]:
-
-# print len(eco_dec_smf[1][0])
-# print len(eco_mass_means[0])
-# print len(all_mock_mass_means[0][:-2])
-# print len(eco_dec_err[1][0])
-
-opt_v, res_arr, perr, est_cov = find_params(eco_dec_smf[1][0],\
-    eco_mass_means[0][:-3],eco_dec_err[1][0])
-
-# In[449]:
-
 # fig, ax = plt.subplots()
 # ax.set_yscale('log')
 # ax.set_xscale('log')
 # # ax.plot(eco_mass_means[0][:-3],test)
 # ax.plot(10**bin_centers,schech_vals_graph)
 # ax.plot(10**eco_mass_means[0][:-3],(eco_dec_smf[1][0]))
-# plt.show()
-
-
-# In[56]:
-
-nrow = int(2)
-ncol = int(3)
-
-fig,axes = plt.subplots(nrows=nrow,ncols=ncol,                        \
-    figsize=(100,200),sharex=True)
-axes_flat = axes.flatten()
-
-zz = int(0)
-while zz <=4:
-    for jj in neigh_vals:
-        for kk in range(len(halo_frac)):
-            plot_halo_frac(bin_centers,halo_frac[kk][jj],axes_flat[zz],zz)
-        nn_str = '{0}'.format(jj)
-        plot_mean_halo_frac(bin_centers,mean_mock_halo_frac[nn_str][0],\
-            axes_flat[zz],mean_mock_halo_frac[nn_str][1])
-        zz += 1
-
-plt.subplots_adjust(top=0.97,bottom=0.1,left=0.03,right=0.99,hspace=0.10,\
-    wspace=0.12)           
-plt.show()            
+# plt.show()      
 
 
 # # Regular Plotting Reintroduced
 
 # In[104]:
 
-def plot_all_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx):
+def plot_all_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx,text=False):
     """
     Returns a plot showing the density-cut, mass ratio.  Optimally
         used with a well-initiated for-loop
@@ -1342,21 +1244,26 @@ def plot_all_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx):
     """
     if plot_idx     ==16:
         ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=18)
-    if col_num      ==0:
-        title_label = 'Mass Ratio 50/50, {0} NN'.format(neigh_val)
-        frac_val    = 10
-        ax.text(0.05, 0.95, title_label,horizontalalignment='left',\
-                    verticalalignment='top',transform=ax.transAxes,fontsize=12)
-    elif col_num    ==1:
-        title_label = 'Mass Ratio 25/75, {0} NN'.format(neigh_val)
-        frac_val    = 4
-        ax.text(0.05, 0.95, title_label,horizontalalignment='left',\
-                    verticalalignment='top',transform=ax.transAxes,fontsize=12)
-    elif col_num    ==2:
-        title_label = 'Mass Ratio 10/90, {0} NN'.format(neigh_val)
-        frac_val    = 2
-        ax.text(0.05, 0.95, title_label,horizontalalignment='left',\
-                    verticalalignment='top',transform=ax.transAxes,fontsize=12)
+
+    if text == True:
+        if col_num      ==0:
+            title_label = 'Mass Ratio 50/50, {0} NN'.format(neigh_val)
+            frac_val    = 10
+            ax.text(0.05, 0.95, title_label,horizontalalignment='left',\
+                        verticalalignment='top',transform=ax.transAxes,\
+                        fontsize=12)
+        elif col_num    ==1:
+            title_label = 'Mass Ratio 25/75, {0} NN'.format(neigh_val)
+            frac_val    = 4
+            ax.text(0.05, 0.95, title_label,horizontalalignment='left',\
+                        verticalalignment='top',transform=ax.transAxes,\
+                        fontsize=12)
+        elif col_num    ==2:
+            title_label = 'Mass Ratio 10/90, {0} NN'.format(neigh_val)
+            frac_val    = 2
+            ax.text(0.05, 0.95, title_label,horizontalalignment='left',\
+                        verticalalignment='top',transform=ax.transAxes,\
+                        fontsize=12)
     ax.set_xlim(9.1,11.9)
 #     ax.set_ylim([0,5])
     ax.set_ylim(0,7)
@@ -1371,6 +1278,7 @@ def plot_all_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx):
 
 def plot_eco_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx,only=False):
     """
+
     Returns subplots of ECO density-cut,mass ratios
     
     Parameters
@@ -1431,7 +1339,7 @@ def plot_eco_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx,only=False):
     frac_vals = np.array([2,4,10])
     y_vals_2 = y_vals[0][frac_vals[hh]]
     ax.errorbar(bin_centers,y_vals_2,yerr=y_vals[1][hh],\
-                    color='dodgerblue',linewidth=2)
+                    color='darkmagenta',linewidth=2)
 
 
 # In[83]:
@@ -1471,7 +1379,7 @@ fig, axes = plt.subplots(nrows=nrow_num, ncols=ncol_num,\
 axes_flat = axes.flatten()
 
 
-fig.text(0.01, 0.5, 'High Density Counts/Lower Density Counts', ha='center'\
+fig.text(0.01, 0.5, 'High Density Counts/Lower Density Counts', ha='center',\
      va='center',rotation='vertical',fontsize=20)
 # fig.suptitle("Percentile Trends", fontsize=18)
 
@@ -1479,18 +1387,21 @@ while zz <= 16:
     for ii in range(len(eco_ratio_info)):
         for hh in range(len(eco_ratio_info[0][1])):
             for jj in range(len(nn_mass_dist)):
-                # upper = A['{0}_{1}'.format(neigh_vals[ii],frac_vals[hh])][0]
-                # lower  = A['{0}_{1}'.format(neigh_vals[ii],frac_vals[hh])][1]
-                # plot_bands(bin_centers,upper,lower,axes_flat[zz] )
+                if jj == 0:
+                    value = True
+                else:
+                    value = False
                 plot_all_rats(bin_cens_diff[jj][neigh_vals[ii]][hh],\
                     (plot_frac_arr[ii][hh][jj]),\
-                    neigh_vals[ii],axes_flat[zz],hh,zz)
+                    neigh_vals[ii],axes_flat[zz],hh,zz,text=value)
             plot_eco_rats(eco_final_bins[ii][hh],(eco_ratio_info[ii]),\
                 neigh_vals[ii],axes_flat[zz],hh,zz)
             zz += 1
 
 plt.subplots_adjust(left=0.04, bottom=0.09, right=0.98, top=0.98,\
                     hspace=0,wspace=0)
+
+# plt.savefig(figsave_path + r"\ratios")
 
 plt.show()
 
@@ -1553,15 +1464,6 @@ def plot_hists(bins_high,bins_low,high_counts,low_counts,\
     ax.plot(bins_low,low_counts,color = 'lightslategray',alpha=0.2)
 
 
-# In[143]:
-
-print eco_high_bins[1]
-
-
-# In[140]:
-
-##when doing loop, include frac vals for bins_high and low, not on counts
-
 def plot_eco_hists(bins_high,bins_low,high_counts,low_counts,               \
     frac_val,ax,plot_idx):
         err_key = 'err_{0}'.format(frac_val)
@@ -1596,12 +1498,6 @@ for ii in range(len(mass_dat)):
     zz = 0
     for jj in range(len(neigh_vals)):
         for hh in frac_vals:
-            # upper    = C['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][0]
-            # lower    = C['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][1]
-            # upper_2  = D['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][0]
-            # lower_2  = D['{0}_{1}'.format(neigh_vals[jj],frac_vals[hh])][1]
-            # plot_bands(bin_centers,upper,lower,axes_flat[zz])
-            # plot_bands(bin_centers,upper_2,lower_2,axes_flat[zz])
             if ii == 0:
                 value = True
             else:
@@ -1619,7 +1515,10 @@ for ii in range(len(mass_dat)):
             zz += int(1)         
 
 plt.subplots_adjust(left=0.07, bottom=0.09, right=0.98, top=0.98,\
-                    hspace=0, wspace=0)            
+                    hspace=0, wspace=0)  
+
+
+# plt.savefig(figsave_path + r"\histograms")                              
 
 plt.show()
 
@@ -1719,7 +1618,7 @@ def plot_eco_meds(bin_centers,y_vals,low_lim,up_lim,ax,plot_idx,only=False):
         if plot_idx == 4:
             ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=18)
     ax.errorbar(bin_centers,y_vals,yerr=0.1,lolims=low_lim,        \
-        uplims=up_lim,color='dodgerblue',label='ECO')
+        uplims=up_lim,color='darkmagenta',label='ECO')
     # if plot_idx == 5:
     #     ax.legend(loc='best')
 
@@ -1753,5 +1652,8 @@ while zz <=4:
         
 plt.subplots_adjust(left=0.05, bottom=0.09, right=0.98, top=0.98,\
             hspace=0,wspace=0)
-plt.show()   
+
+# plt.savefig(figsave_path + r"\median_distances")
+
+plt.show() 
 

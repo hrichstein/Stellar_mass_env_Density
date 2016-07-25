@@ -237,8 +237,14 @@ three_dex_norm = {'1': ([[ 0.20829433,  0.20457921,  0.1903796 ,  0.17148667,  0
 bin_centers = np.array([  9.2,   9.4,   9.6,   9.8,  10. ,  10.2,  10.4,  10.6,  10.8,
         11. ,  11.2,  11.4,  11.6])
 
-def plot_mean_halo_frac(bin_centers,mean_vals,ax,std,plot_idx,color='grey',label=None):
+def plot_mean_halo_frac(bin_centers,mean_vals,ax,std,plot_idx,color='grey',\
+  label=None,text=False):
     ax.errorbar(bin_centers,mean_vals,yerr=std,color=color,label=label)
+    if text == True:
+      titles = [1,2,3,5,10,20]
+      title_here = 'n = {0}'.format(titles[plot_idx])
+      ax.text(0.05, 0.3, title_here,horizontalalignment='left',            \
+            verticalalignment='bottom',transform=ax.transAxes,fontsize=18)
     if plot_idx == 0:
         ax.legend(loc='best')
 
@@ -248,7 +254,7 @@ nrow = int(2)
 ncol = int(3)
 
 fig,axes = plt.subplots(nrows=nrow,ncols=ncol,                        \
-    figsize=(100,200),sharex=True)
+    figsize=(100,200),sharex=True,sharey=True)
 axes_flat = axes.flatten()
 
 zz = int(0)
@@ -272,7 +278,7 @@ while zz <=4:
             color='seagreen',label='0.2')
         plot_mean_halo_frac(bin_centers,one_dex_abd_matched[nn_str][0],\
             axes_flat[zz],one_dex_norm[nn_str][1],zz,\
-            color='maroon',label='0.1')
+            color='maroon',label='0.1',text=True)
         zz += 1
 
 plt.subplots_adjust(top=0.97,bottom=0.1,left=0.03,right=0.99,hspace=0.10,\

@@ -531,16 +531,16 @@ def mean_bin_mass(mass_dist,bins,kk):
 dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
 dirpath += r"\Stellar_mass_env_Density\Catalogs"
 dirpath += r"\Mocks_Scatter_Abundance_Matching"
-dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p3_ECO_Mocks"
+dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p1_ECO_Mocks"
 
 
-figsave_path = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
-figsave_path+= r"\Stellar_mass_env_Density\Plots"
-figsave_path+= r"\Abundance_matched"
-figsave_path+= r"\three_dec"
+# figsave_path = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
+# figsave_path+= r"\Stellar_mass_env_Density\Plots"
+# figsave_path+= r"\Abundance_matched"
+# figsave_path+= r"\three_dec"
 
 
-usecols  = (0,1,4,8,13,25)
+usecols  = (0,1,4,7,8,13)
 dlogM    = 0.2
 neigh_dict = {1:0,2:1,3:2,5:3,10:4,20:5}
 
@@ -549,7 +549,7 @@ neigh_dict = {1:0,2:1,3:2,5:3,10:4,20:5}
 
 ECO_cats = (Index(dirpath,'.dat'))
 
-names    = ['ra','dec','Halo_ID','cz','logMstar','cen_sat_flag']
+names    = ['ra','dec','Halo_ID','cen_sat_flag','cz','logMstar']
 
 PD = [[] for ii in range(len(ECO_cats))]
 
@@ -643,6 +643,8 @@ for ii in range(len(mass_arr)):
     halo_frac[ii] = {}
     mass_binning = np.digitize(mass_arr[ii],bins)
     bins_to_use = list(np.unique(mass_binning))
+    if (len(bins)-3) not in bins_to_use:
+        bins_to_use.append(len(bins)-3)
     if (len(bins)-2) not in bins_to_use:
         bins_to_use.append(len(bins)-2)
     if (len(bins)-1) not in bins_to_use:
@@ -661,6 +663,7 @@ for ii in range(len(mass_arr)):
                 num_in_bin = np.nan
             num_same_halo = np.count_nonzero(truth_binning==1)
             frac.append(num_same_halo/(1.*num_in_bin))
+        print len(frac)
         halo_frac[ii][jj] = frac
 
 
@@ -699,7 +702,7 @@ def plot_halo_frac(bin_centers,y_vals,ax,plot_idx,text=False):
     ax.plot(bin_centers,y_vals,color='silver')
     
 def plot_mean_halo_frac(bin_centers,mean_vals,ax,std):
-    ax.errorbar(bin_centers,mean_vals,yerr=std,color='darkmagenta')
+    ax.errorbar(bin_centers,mean_vals,yerr=std,color='maroon')
 
 
 
@@ -1073,7 +1076,7 @@ ax.tick_params(axis='both', labelsize=14)
 for ii in range(len(mass_freq)):
     ax.plot(bin_centers,mass_freq[ii][0],color='silver')
     ax.fill_between(bin_centers,max_lim,min_lim,color='silver',alpha=0.1)
-ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='darkmagenta',\
+ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='maroon',\
             linewidth=2,label='ECO')
 ax.legend(loc='best')
 
@@ -1346,7 +1349,7 @@ def plot_eco_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx,only=False):
     frac_vals = np.array([2,4,10])
     y_vals_2 = y_vals[0][frac_vals[hh]]
     ax.errorbar(bin_centers,y_vals_2,yerr=y_vals[1][hh],\
-                    color='darkmagenta',linewidth=2)
+                    color='maroon',linewidth=2)
 
 
 # In[83]:
@@ -1625,7 +1628,7 @@ def plot_eco_meds(bin_centers,y_vals,low_lim,up_lim,ax,plot_idx,only=False):
         if plot_idx == 4:
             ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=18)
     ax.errorbar(bin_centers,y_vals,yerr=0.1,lolims=low_lim,        \
-        uplims=up_lim,color='darkmagenta',label='ECO')
+        uplims=up_lim,color='maroon',label='ECO')
     # if plot_idx == 5:
     #     ax.legend(loc='best')
 

@@ -238,8 +238,11 @@ bin_centers = np.array([  9.2,   9.4,   9.6,   9.8,  10. ,  10.2,  10.4,  10.6, 
         11. ,  11.2,  11.4,  11.6])
 
 def plot_mean_halo_frac(bin_centers,mean_vals,ax,std,plot_idx,color='grey',\
-  label=None,text=False):
-    ax.errorbar(bin_centers,mean_vals,yerr=std,color=color,label=label)
+  linestyle='solid',linewidth=1,label=None,text=False):
+    if plot_idx == 4:
+      ax.set_xlabel(r'$\log\ (M_{*}/M_{\odot})$',fontsize=20)
+    ax.errorbar(bin_centers,mean_vals,yerr=std,color=color,label=label,\
+      linestyle=linestyle,linewidth=linewidth)
     if text == True:
       titles = [1,2,3,5,10,20]
       title_here = 'n = {0}'.format(titles[plot_idx])
@@ -247,6 +250,7 @@ def plot_mean_halo_frac(bin_centers,mean_vals,ax,std,plot_idx,color='grey',\
             verticalalignment='bottom',transform=ax.transAxes,fontsize=18)
     if plot_idx == 0:
         ax.legend(loc='best')
+
 
 neigh_vals = np.array([1,2,3,5,10,20])
 
@@ -261,24 +265,26 @@ zz = int(0)
 while zz <=4:
     for jj in neigh_vals:
         nn_str = '{0}'.format(jj)
-        plot_mean_halo_frac(bin_centers,three_dex_abd_matched[nn_str][0],\
-            axes_flat[zz],three_dex_abd_matched[nn_str][1],zz,\
-            color='darkmagenta',label='0.3 ABD')    
-        plot_mean_halo_frac(bin_centers,two_dex_abd_matched[nn_str][0],\
-            axes_flat[zz],two_dex_abd_matched[nn_str][1],zz,\
-            color='lime',label='0.2 ABD')
+        # plot_mean_halo_frac(bin_centers,three_dex_norm[nn_str][0],\
+        #     axes_flat[zz],three_dex_abd_matched[nn_str][1],zz,\
+        #     color='indigo',label='0.3',linewidth=3)    
+        # plot_mean_halo_frac(bin_centers,two_dex_norm[nn_str][0],\
+        #     axes_flat[zz],two_dex_norm[nn_str][1],zz,\
+        #     color='seagreen',label='0.2',linewidth=3)
+        # plot_mean_halo_frac(bin_centers,one_dex_norm[nn_str][0],\
+        #     axes_flat[zz],one_dex_norm[nn_str][1],zz,\
+        #     color='maroon',label='0.1',text=True,linewidth=3)
         plot_mean_halo_frac(bin_centers,one_dex_abd_matched[nn_str][0],\
             axes_flat[zz],one_dex_abd_matched[nn_str][1],zz,\
-            color='red',label='0.1 ABD')
-        plot_mean_halo_frac(bin_centers,three_dex_norm[nn_str][0],\
-            axes_flat[zz],three_dex_abd_matched[nn_str][1],zz,\
-            color='indigo',label='0.3')    
+            color='red',label='0.1 dex')
         plot_mean_halo_frac(bin_centers,two_dex_abd_matched[nn_str][0],\
-            axes_flat[zz],two_dex_norm[nn_str][1],zz,\
-            color='seagreen',label='0.2')
-        plot_mean_halo_frac(bin_centers,one_dex_abd_matched[nn_str][0],\
-            axes_flat[zz],one_dex_norm[nn_str][1],zz,\
-            color='maroon',label='0.1',text=True)
+            axes_flat[zz],two_dex_abd_matched[nn_str][1],zz,\
+            color='lime',label='0.2 dex')
+        plot_mean_halo_frac(bin_centers,three_dex_abd_matched[nn_str][0],\
+            axes_flat[zz],three_dex_abd_matched[nn_str][1],zz,\
+            color='darkmagenta',label='0.3 dex')    
+
+
         zz += 1
 
 plt.subplots_adjust(top=0.97,bottom=0.1,left=0.03,right=0.99,hspace=0.10,\

@@ -80,10 +80,19 @@ pickle_in_hists+=r"\hist_bands.p"
 
 hists_vals = pickle.load(open(pickle_in_hists,"rb"))
 
-two_dex_hists = hists_vals[1]
+two_dex_hists_low = hists_vals[2]
 
-hists_dict = {1:two_dex_hists['1_4'],5:two_dex_hists['5_4'],\
-            20:two_dex_hists['20_4']}
+hists_dict_low = {1:two_dex_hists_low['1_4'],5:two_dex_hists_low['5_4'],\
+            20:two_dex_hists_low['20_4']}
+
+two_dex_hists_high = hists_vals[3]
+
+hists_dict_high = {1:two_dex_hists_high['1_4'],5:two_dex_hists_high['5_4'],\
+            20:two_dex_hists_high['20_4']}
+
+# for ii in neigh_vals:
+#     for tt in range (2):
+#         print len(hists_dict[ii][tt])            
 
 ###############################################################################
 
@@ -109,6 +118,24 @@ bin_centers= 0.5*(bins[:-1]+bins[1:])
 
 ##eco_meds... eventually 3 arrays. First is median line, second and third are \
 ##low and high bootstrap
+###############################################################################
+pickle_in_eco_hists = pickle_in
+pickle_in_eco_hists+=r"\eco_hists.p"
+
+eco_hists = pickle.load(open(pickle_in_eco_hists,"rb"))
+
+eco_high_counts = {1:(eco_hists[1][1][4],eco_hists[1][1]['err_4']),\
+        5:(eco_hists[1][5][4],eco_hists[1][5]['err_4']),\
+        20:(eco_hists[1][20][4],eco_hists[1][20]['err_4'])}
+eco_low_counts  = {1:(eco_hists[0][1][4],eco_hists[0][1]['err_4']),\
+        5:(eco_hists[0][5][4],eco_hists[0][5]['err_4']),\
+        20:(eco_hists[0][20][4],eco_hists[0][20]['err_4'])}
+
+eco_high_bins = {1:eco_hists[3][1][4],5:eco_hists[3][5][4],\
+        20:eco_hists[3][20][4]}
+eco_low_bins  = {1:eco_hists[2][1][4],5:eco_hists[2][5][4],\
+        20:eco_hists[2][20][4]}     
+
 ###############################################################################
 
 
@@ -144,7 +171,7 @@ bin_centers= 0.5*(bins[:-1]+bins[1:])
 ###############################################################################
 
 
-def plot_every_rat(bin_cens,upper,lower,ax,plot_idx,eco_bins,\
+def plot_every_rat(bin_cens,upper,lower,ax,plot_idx,neigh_val,eco_bins,\
     eco_vals,eco_err,color='silver',label=None,eco=False,alpha=0.1):
 
     ax.set_ylim(0,4)
@@ -154,7 +181,7 @@ def plot_every_rat(bin_cens,upper,lower,ax,plot_idx,eco_bins,\
     ax.tick_params(axis='both', labelsize=18)
     ax.fill_between(bin_cens,upper,lower,color=color,alpha=alpha,label=label)
     plot_neigh_dict = {0:1,1:5,2:20}
-    title = 'n = {0}'.format(plot_neigh_dict[plot_idx])
+    title = 'n = {0}'.format(neigh_val)
     ax.text(0.05, 0.05, title,horizontalalignment='left',\
                     verticalalignment='bottom',transform=ax.transAxes,\
                     fontsize=18)
@@ -164,8 +191,8 @@ def plot_every_rat(bin_cens,upper,lower,ax,plot_idx,eco_bins,\
         ax.axhline(y=1,c="darkorchid",linewidth=0.5,zorder=0)
         ax.errorbar(eco_bins,eco_vals,yerr=eco_err,\
                     color='darkmagenta',linewidth=1,label='ECO')
-        if plot_idx == 0:
-            ax.legend(loc='best',numpoints=1)
+    if plot_idx == 1:
+        ax.legend(loc='best',numpoints=1)
 
 
 
@@ -173,36 +200,57 @@ def plot_every_rat(bin_cens,upper,lower,ax,plot_idx,eco_bins,\
 
 nrow_num = int(1)
 ncol_num = int(3)
-zz       = int(0)
+
+
+
+dict_to_neigh = {1:1,5:2,20:3}
+dict_to_zz  = {1:0,5:1,20:2}
 
 neigh_vals = np.array([1,5,20])
 
 fig,axes = plt.subplots(nrows=nrow_num,ncols=ncol_num,figsize=(14,4),\
     sharey=True)
 
-fig.suptitle(r"Abundance Ratio of Galaxies in Top/Bottom 25% Density Regions", \
-    fontsize=20,y=1.04,verticalalignment='top')
+figure_title = fig.suptitle\
+(r"Abundance Ratio of Galaxies in Top/Bottom 25\% Density Regions", \
+    fontsize=20)
+
+figure_title.set_y(1.0)
+fig.subplots_adjust(bottom=0.2, right=0.9, top=0.85, hspace=0, wspace=0)
 
 axes_flat= axes.flatten()
 
-dict_to_neigh = {1:1,5:2,20:3}
+zz       = int(0)
+while zz == 0:
+    for yy in range(1,4):
+        for xx in neigh_vals:
+            upper = all_rat_dict[yy][xx][0]
+            lower = all_rat_dict[yy][xx][1]
+            if xx == 1:
+                ax_as = axes_flat[0]
+            if xx == 5:
+                ax_as = axes_flat[1]
+            if xx == 20:
+                ax_as = axes_flat[2]
+            if yy == 1:
+                color = 'mediumspringgreen'
+                label = '0.1 dex'
+                alpha =  0.3
+                eco   = True
+            if yy ==2:
+                color = 'mediumslateblue'
+                label = '0.2 dex'
+                alpha =  0.2
+                eco   = True
+            if yy ==3:
+                color = 'orchid'
+                label = '0.3 dex'
+                alpha =  0.1
+                eco   = True
+            plot_every_rat(bin_centers[:-1],upper,lower,ax_as,yy,xx,\
+                eco_bins[xx],eco_ratio[xx],eco_rat_err[xx],\
+                color=color,label=label,eco=eco,alpha=alpha)
 
-while zz <= 2:
-    for xx in neigh_vals:
-        upper = all_rat_dict[dict_to_neigh[xx]][xx][0]
-        lower = all_rat_dict[dict_to_neigh[xx]][xx][1]
-        if dict_to_neigh[xx] == 1:
-            plot_every_rat(bin_centers[:-1],upper,lower,axes_flat[zz],zz,\
-                eco_bins[xx],eco_ratio[xx],eco_rat_err[xx],\
-                color='red',label='0.1 dex',eco=False,alpha=0.3)
-        if dict_to_neigh[xx] ==2:
-            plot_every_rat(bin_centers[:-1],upper,lower,axes_flat[zz],zz,\
-                eco_bins[xx],eco_ratio[xx],eco_rat_err[xx],\
-                color='lime',label='0.2 dex',eco=False,alpha=0.2)
-        if dict_to_neigh[xx] ==3:
-            plot_every_rat(bin_centers[:-1],upper,lower,axes_flat[zz],zz,\
-                eco_bins[xx],eco_ratio[xx],eco_rat_err[xx],\
-                color='lightsteelblue',label='0.3 dex',eco=True)
     zz+=1
 
 plt.tight_layout()
@@ -211,67 +259,139 @@ plt.show()
 ###############################################################################
 
 def plot_every_med(bin_cens,upper,lower,ax,plot_idx,\
-    eco_vals,color='silver',label=None,eco=False,alpha=0.1):
+    eco_vals,neigh_val,color='silver',label=None,eco=False,alpha=0.1):
 
     # ax.set_ylim(0,4)
-    ax.set_yscale('log')
+    ax.set_yscale('symlog')
     ax.set_xlim(9.1,11.8)
     ax.set_xticks(np.arange(9.5, 12., 0.5))
-    # ax.set_yticks([0,1,2,3,4])
-    ax.tick_params(axis='both', labelsize=18)
+    ax.tick_params(axis='both', labelsize=16)
+    ax.set_ylim(0,10**1.3)
+    ax.set_yticks(np.arange(0,12,1))  
+    ax.set_yticklabels(np.arange(1,11,2))
     ax.fill_between(bin_cens,upper,lower,color=color,alpha=alpha,label=label)
-    plot_neigh_dict = {0:1,1:5,2:20}
-    title = 'n = {0}'.format(plot_neigh_dict[plot_idx])
+    title = 'n = {0}'.format(neigh_val)
     ax.text(0.05, 0.05, title,horizontalalignment='left',\
                     verticalalignment='bottom',transform=ax.transAxes,\
                     fontsize=18)
     if eco == True:
-        if plot_idx     ==1:
+        if plot_idx  ==1:
             ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=18)
         ax.errorbar(bin_cens,eco_vals[0],yerr=0.1,lolims=eco_vals[1],\
             uplims=eco_vals[2],\
                     color='darkmagenta',linewidth=1,label='ECO')
-        if plot_idx == 0:
-            ax.legend(loc='best',numpoints=1)
+        ax.legend(loc='best',numpoints=1)
 
 
+###############################################################################
 
 nrow_num = int(1)
 ncol_num = int(3)
-zz       = int(0)
+
 
 neigh_vals = np.array([1,5,20])
 
 fig,axes = plt.subplots(nrows=nrow_num,ncols=ncol_num,figsize=(14,4),\
     sharey=True)
 
-fig.suptitle(r"Median Distance to Nth Nearest Neighbor", \
-    fontsize=20,y=1.04,verticalalignment='top')
+figure_title = fig.suptitle(r"Median Distance to Nth Nearest Neighbor", \
+    fontsize=20)
+figure_title.set_y(1.0)
+fig.subplots_adjust(bottom=0.2, right=0.9, top=0.85, hspace=0, wspace=0)
 
 axes_flat= axes.flatten()
-
+zz       = int(0)
 while zz <= 2:
-    for yy in all_meds_dict:
-        for xx in neigh_vals:
+    for xx in neigh_vals:
+        for yy in all_meds_dict:
             upper = all_meds_dict[yy][xx][0]
             lower = all_meds_dict[yy][xx][1]
+            if xx == 1:
+                ax_as = axes_flat[0]
+            if xx == 5:
+                ax_as = axes_flat[1]
+            if xx == 20:
+                ax_as = axes_flat[2]
             if yy == 1:
-                color = 'red'
+                color = 'violet'
                 label = '0.1 dex'
                 alpha =  0.3
+                eco = False
             if yy == 2:
-                color = 'lime'
+                color = 'lightsteelblue'
                 label = '0.2 dex'
                 alpha =  0.2
+                eco = False
             if yy == 3:
-                color = 'lightsteelblue'
+                color = 'orchid'
                 label = '0.3 dex'
                 alpha =  0.1
                 eco   = True
-            plot_every_med(bin_centers[:-1],upper,lower,axes_flat[0],zz,\
-                eco_meds[xx],color=color,label=label,eco=eco,alpha=alpha)
+            plot_every_med(bin_centers[:-1],upper,lower,ax_as,zz,\
+                eco_meds[xx],xx,color=color,label=label,eco=eco,alpha=alpha)
 
     zz+=1
 
-plt.tight_layout()
 plt.show()    
+
+###############################################################################
+
+def plot_eco_hists(bins_high,bins_low,high_counts,low_counts,               \
+    high_counts_err,low_counts_err,ax,plot_idx,bin_centers,\
+    upper_h,lower_h,upper_l,lower_l,text=False):
+        ax.set_yscale('log')
+        ax.set_xticks(np.arange(9.5,12,0.5))
+        ax.errorbar(bins_high,high_counts,\
+                            yerr=high_counts_err,drawstyle='steps-mid',\
+                                    color='royalblue',label='Higher Density')
+        ax.errorbar(bins_low,low_counts,\
+                            yerr=low_counts_err,drawstyle='steps-mid',\
+                                        color='crimson',label='Lower Density')
+        ax.fill_between(bin_centers,upper_h,lower_h,color='lightsteelblue',alpha=0.2)
+        ax.fill_between(bin_centers,upper_l,lower_l,color='lightsteelblue',alpha=0.2)                                               
+        if plot_idx == 0:
+            ax.set_ylabel(r'$\log\ (\frac{N_{gal/bin}}{N_{total}*dlogM})$')
+        if plot_idx     ==1:
+            ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=18)                                          
+        if text == True:
+            ax.legend(loc='best')
+
+        
+
+eco_low_hist = eco_vals[0]
+eco_high_hist = eco_vals[1]
+
+
+fig,axes = plt.subplots(nrows=nrow_num,ncols=ncol_num,figsize=(14,4),\
+    sharey=True)
+
+figure_title = fig.suptitle(r"Abundance of Galaxies in Top/Bottom 25\% Density Regions", \
+    fontsize=20)
+figure_title.set_y(1.0)
+fig.subplots_adjust(bottom=0.2, right=0.9, top=0.85, hspace=0, wspace=0)
+
+axes_flat = axes.flatten()
+
+text = False
+zz = int(0)
+while zz <= 2:
+    for xx in neigh_vals:
+        if xx == 1:
+            ax_as = axes_flat[0]
+        if xx == 5:
+            ax_as = axes_flat[1]
+        if xx == 20:
+            ax_as = axes_flat[2]
+            if zz == 2:
+                text = True
+            else:
+                text = False
+        plot_eco_hists(eco_high_bins[xx],eco_low_bins[xx],\
+            eco_high_counts[xx][0],eco_low_counts[xx][0],\
+            eco_high_counts[xx][1],eco_low_counts[xx][1],\
+            ax_as,zz,bin_centers[:-1],hists_dict_high[xx][0],\
+            hists_dict_high[xx][1],hists_dict_low[xx][0],\
+            hists_dict_low[xx][1],text=text)  
+    zz+=1          
+
+plt.show()

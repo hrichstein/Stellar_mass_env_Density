@@ -1,9 +1,12 @@
-# neigh_dict and nn_dict are the same thing. 
-# Need to combine/change variables at some point
-
-# In[251]:
 
 from __future__ import division, absolute_import
+
+from matplotlib import rc,rcParams
+rc('text', usetex=True)
+rc('axes', linewidth=2)
+rc('font', weight='bold')
+# In[251]:
+
 
 import astropy.stats
 import glob
@@ -15,6 +18,16 @@ import numpy as np
 import os
 import pandas as pd
 from scipy import integrate,optimize,spatial
+
+from mpl_toolkits.mplot3d import Axes3D
+
+class Vars(object):
+    size_xlabel = 24
+    size_ylabel = 24
+    size_text   = 18
+    size_tick   = 18
+
+va = Vars()
 
 
 # In[252]:
@@ -524,20 +537,20 @@ def mean_bin_mass(mass_dist,bins,kk):
 
 # In[259]:
 
-# dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
-# dirpath += r"\Catalogs\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_"
-# dirpath += r"scatter_mocks\Resolve_plk_5001_so_mvir_scatter0p1_ECO_Mocks"
+# dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
+# dirpath += r"\Stellar_mass_env_density\Catalogs"
+# dirpath += r"\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_scatter_mocks"
+# dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p1_ECO_Mocks"
 
 dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
 dirpath += r"\Stellar_mass_env_Density\Catalogs"
 dirpath += r"\Mocks_Scatter_Abundance_Matching"
-dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p3_ECO_Mocks"
+dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p2_ECO_Mocks"
 
-
-figsave_path = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
-figsave_path+= r"\Stellar_mass_env_Density\Plots"
-figsave_path+= r"\Abundance_matched"
-figsave_path+= r"\three_dec"
+# figsave_path = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
+# figsave_path+= r"\Stellar_mass_env_Density\Plots"
+# figsave_path+= r"\Abundance_matched"
+# figsave_path+= r"\three_dec"
 
 
 usecols  = (0,1,4,8,13)
@@ -675,7 +688,15 @@ for ii in neigh_vals:
     oo_tot_mean = [np.nanmean(oo_tot[uu]) for uu in xrange(len(oo_tot))]
     oo_tot_std  = [np.nanstd(oo_tot[uu])/np.sqrt(len(halo_frac)) \
     for uu in xrange(len(oo_tot))]
-    mean_mock_halo_frac[bin_str] = [oo_tot_mean,oo_tot_std]
+    mean_mock_halo_frac[bin_str] = np.array([oo_tot_mean,oo_tot_std])
+
+# temp_sav_list = []
+# for ii in neigh_vals:
+#     bin_str = '{0}'.format(ii)
+#     temp_sav_list.append(mean_mock_halo_frac[bin_str])
+# sav_array = np.array(temp_sav_list)
+# txt_file_name = "{0}_mean_mock_halo_frac.txt".format(dec_spec)
+# np.savetxt(txt_file_name,sav_array,fmt='%.8f')
 
 
 def plot_halo_frac(bin_centers,y_vals,ax,plot_idx,text=False):
@@ -702,7 +723,7 @@ nrow = int(2)
 ncol = int(3)
 
 fig,axes = plt.subplots(nrows=nrow,ncols=ncol,                        \
-    figsize=(100,200),sharex=True)
+    figsize=(12,12),sharex=True)
 axes_flat = axes.flatten()
 
 zz = int(0)
@@ -730,7 +751,7 @@ plt.subplots_adjust(top=0.97,bottom=0.1,left=0.03,right=0.99,hspace=0.10,\
     wspace=0.12)     
 
 # plt.savefig(figsave_path + r"\halo_frac_means")
-
+# 
 plt.show()      
 
 
@@ -849,6 +870,30 @@ eco_mass_dat  = [(eco_mass_dens[jj][eco_idx[jj]].T[0]) for jj in\
 
 eco_ratio_info    = [[] for xx in xrange(len(eco_mass_dat))]
 eco_final_bins    = [[] for xx in xrange(len(eco_mass_dat))]
+
+###############################################################################
+fig,ax = plt.subplots()
+
+ax.scatter(ra_eco*24/360,dec_eco,marker='.',color='deeppink')
+ax.set_xlim(min(ra_eco*24/360),max(ra_eco*24/360))
+ax.set_ylim(0,50)
+ax.set_xlabel(r'RA \textnormal{(Hours)}',fontsize=va.size_xlabel)
+ax.set_ylabel(r'Dec \textnormal{(degrees)}',fontsize=va.size_ylabel)
+plt.show()
+
+###############################################################################
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(coords_eco.T[0],coords_eco.T[1],coords_eco.T[2],color='deeppink',\
+    s=1,marker='.')
+ax.scatter(0,0,0,marker='*',s=200,color='darkorchid',\
+    edgecolor='')
+ax.set_ylabel('X (Mpc)',fontsize=va.size_text)
+ax.set_xlabel('Z (Mpc)',fontsize=va.size_text)
+ax.set_zlabel('Y (Mpc)',fontsize=va.size_text)
+plt.tight_layout()
+plt.show()
 
 
 for qq in range(len(eco_mass_dat)):
@@ -1055,25 +1100,27 @@ for ss in neigh_vals:
 
 # In[294]:
 
-fig,ax  = plt.subplots(figsize=(8,8))
-ax.set_title('Mass Distribution',fontsize=18)
-ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=18)
-ax.set_ylabel(r'$\log\ (\frac{N_{gal}}{N_{total}*dlogM_{*}})$',fontsize=20)
+fig,ax  = plt.subplots(figsize=(12,12))
+# ax.set_title('Mass Distribution',fontsize=18)
+ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=va.size_xlabel)
+ax.set_ylabel\
+(r'$\log\ (\frac{\textnormal{N}_{gal/bin}}{\textnormal{N}_{total}*dlogM})$',\
+                fontsize=va.size_ylabel)
 ax.set_yscale('log')
-ax.set_xlim(9.1,11.9)
-ax.tick_params(axis='both', labelsize=14)
+ax.set_xlim(9.1,11.8)
+ax.tick_params(axis='both', labelsize=va.size_tick)
 
-for ii in range(len(mass_freq)):
-    ax.plot(bin_centers,mass_freq[ii][0],color='silver')
-    ax.fill_between(bin_centers,max_lim,min_lim,color='silver',alpha=0.1)
-ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='darkmagenta',\
-            linewidth=2,label='ECO')
+# for ii in range(len(mass_freq)):
+    # ax.plot(bin_centers,mass_freq[ii][0],color='silver')
+    # ax.fill_between(bin_centers,max_lim,min_lim,color='silver',alpha=0.1)
+ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='deeppink',\
+            linewidth=2,label='ECO',drawstyle='steps-mid')
 ax.legend(loc='best')
 
-plt.subplots_adjust(left=0.15, bottom=0.1, right=0.85, top=0.94,\
+plt.subplots_adjust(left=0.15, bottom=0.1, right=0.85, top=0.93,\
                     hspace=0.2,wspace=0.2)
 
-plt.savefig(figsave_path + r"\stellar_mass_func")
+# plt.savefig(figsave_path + r"\stellar_mass_func")
 
 plt.show()
 
@@ -1375,7 +1422,7 @@ ncol_num = int(3)
 zz       = int(0)
 
 fig, axes = plt.subplots(nrows=nrow_num, ncols=ncol_num,\
-             figsize=(100,200), sharex= True,sharey=True)
+             figsize=(12,12), sharex= True,sharey=True)
 axes_flat = axes.flatten()
 
 
@@ -1487,7 +1534,7 @@ ncol_num  = int(3)
 frac_dict = {2:0,4:1,10:2}
 
 fig, axes = plt.subplots(nrows=nrow_num, ncols=ncol_num,\
-             figsize=(150,200), sharex= True,sharey=True)
+             figsize=(12,12), sharex= True,sharey=True)
 axes_flat = axes.flatten()
 
 fig.text(0.02, 0.5,r'$\log\ (\frac{N_{gal}}{N_{total}*dlogM_{*}})$', \
@@ -1657,3 +1704,26 @@ plt.subplots_adjust(left=0.05, bottom=0.09, right=0.98, top=0.98,\
 
 plt.show() 
 
+# A = {}
+# nn_dict   = {1:0,2:1,3:2,5:3,10:4,20:5}
+# coln_dict = {2:0,4:1,10:2}
+
+# nn_keys  = np.sort(nn_dict.keys())
+# col_keys = np.sort(coln_dict.keys())
+# zz_num   = len(plot_frac_arr[nn_dict[1]][coln_dict[2]])
+
+# for nn in nn_keys:
+#     for coln in col_keys:
+#         bin_str    = '{0}_{1}'.format(nn,coln)
+#         for cc in range(zz_num):
+#             zz_arr = np.array(plot_frac_arr[nn_dict[nn]][coln_dict[coln]][cc])
+#             n_elem = len(zz_arr)
+#             if cc == 0:
+#                 zz_tot = np.zeros((n_elem,1))
+#             zz_tot = np.insert(zz_tot,len(zz_tot.T),zz_arr,1)
+#         zz_tot = np.array(np.delete(zz_tot,0,axis=1))
+#         for kk in xrange(len(zz_tot)):
+#             zz_tot[kk][zz_tot[kk] == np.inf] = np.nan
+#         zz_tot_max = [np.nanmax(zz_tot[kk]) for kk in xrange(len(zz_tot))]
+#         zz_tot_min = [np.nanmin(zz_tot[kk]) for kk in xrange(len(zz_tot))]
+#         A[bin_str] = [zz_tot_max,zz_tot_min]

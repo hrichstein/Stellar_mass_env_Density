@@ -11,6 +11,20 @@ import os
 import pandas as pd
 from scipy import integrate,optimize,spatial
 
+from matplotlib import rc,rcParams
+rc('text', usetex=True)
+rc('axes', linewidth=2)
+rc('font', weight='bold')
+# rcParams['text.latex.preamble'] = [r'\usepackage{sfmath} \boldmath']
+
+class Vars(object):
+    size_xlabel = 24
+    size_ylabel = 24
+    size_text   = 18
+    size_tick   = 18
+
+va = Vars()
+
 three_dex_abd_matched = {'1': ([[ 0.21524025,  0.20638555,  0.18613791,  0.17004973,  0.17328601,
           0.17824797,  0.22330475,  0.27547932,  0.35097406,  0.46594156,
           0.6529005 ,  0.6352904 ,  0.73630952],
@@ -238,32 +252,47 @@ bin_centers = np.array([  9.2,   9.4,   9.6,   9.8,  10. ,  10.2,  10.4,  10.6, 
         11. ,  11.2,  11.4,  11.6])
 
 def plot_mean_halo_frac(bin_centers,mean_vals,ax,std,plot_idx,color='grey',\
-  linestyle='solid',linewidth=1,label=None,text=False):
-    if plot_idx == 4:
-      ax.set_xlabel(r'$\log\ (M_{*}/M_{\odot})$',fontsize=20)
+  linestyle='solid',linewidth=2,label=None,text=False):
+    # if plot_idx == 4:
+    if plot_idx == 1:
+      ax.set_xlabel(r'$\log\ (M_{*}/M_{\odot})$',fontsize=va.size_xlabel)
+    ax.set_xlim(9.1,11.9)
+    ax.set_xticks(np.arange(9.5,12,0.5))
+    ax.tick_params(axis='both', labelsize=va.size_tick)
     ax.errorbar(bin_centers,mean_vals,yerr=std,color=color,label=label,\
       linestyle=linestyle,linewidth=linewidth)
     if text == True:
-      titles = [1,2,3,5,10,20]
-      title_here = 'n = {0}'.format(titles[plot_idx])
-      ax.text(0.05, 0.3, title_here,horizontalalignment='left',            \
-            verticalalignment='bottom',transform=ax.transAxes,fontsize=18)
+      # titles = [1,2,3,5,10,20]
+      titles_pres = [1,5,20]
+      title_here = r"\boldmath$N=%d$"%(titles_pres[plot_idx])
+      ax.text(0.05, 0.6, title_here,horizontalalignment='left',            \
+            verticalalignment='top',transform=ax.transAxes,\
+            fontsize=va.size_text)
     if plot_idx == 0:
         ax.legend(loc='best')
+        ax.set_ylabel(r'Fraction in Same Halo',fontsize=va.size_ylabel)
 
 
 neigh_vals = np.array([1,2,3,5,10,20])
 
-nrow = int(2)
-ncol = int(3)
+# nrow = int(2)
+# ncol = int(3)
 
-fig,axes = plt.subplots(nrows=nrow,ncols=ncol,                        \
-    figsize=(100,200),sharex=True,sharey=True)
+pres_row = int(1)
+pres_col = int(3)
+neigh_vals_pres = (1,5,20)
+
+fig,axes = plt.subplots(nrows=pres_row,ncols=pres_col,                        \
+    figsize=(14,4),sharex=True,sharey=True)
 axes_flat = axes.flatten()
 
+# figure_title = fig.suptitle(r'Fraction of Galaxies with Nth Nearest Neighbor in Same Halo',\
+#   fontsize=20)
+# figure_title.set_y(1.0)
+# fig.subplots_adjust(bottom=0.17, right=0.99, left=0.04,top=0.94, hspace=0, wspace=0)
 zz = int(0)
-while zz <=4:
-    for jj in neigh_vals:
+while zz <=2:
+    for jj in neigh_vals_pres:
         nn_str = '{0}'.format(jj)
         # plot_mean_halo_frac(bin_centers,three_dex_norm[nn_str][0],\
         #     axes_flat[zz],three_dex_abd_matched[nn_str][1],zz,\
@@ -274,20 +303,21 @@ while zz <=4:
         # plot_mean_halo_frac(bin_centers,one_dex_norm[nn_str][0],\
         #     axes_flat[zz],one_dex_norm[nn_str][1],zz,\
         #     color='maroon',label='0.1',text=True,linewidth=3)
-        plot_mean_halo_frac(bin_centers,one_dex_abd_matched[nn_str][0],\
-            axes_flat[zz],one_dex_abd_matched[nn_str][1],zz,\
-            color='red',label='0.1 dex')
+        # plot_mean_halo_frac(bin_centers,one_dex_abd_matched[nn_str][0],\
+        #     axes_flat[zz],one_dex_abd_matched[nn_str][1],zz,\
+        #     color='darkviolet',label='0.1 dex')
         plot_mean_halo_frac(bin_centers,two_dex_abd_matched[nn_str][0],\
             axes_flat[zz],two_dex_abd_matched[nn_str][1],zz,\
-            color='lime',label='0.2 dex')
-        plot_mean_halo_frac(bin_centers,three_dex_abd_matched[nn_str][0],\
-            axes_flat[zz],three_dex_abd_matched[nn_str][1],zz,\
-            color='darkmagenta',label='0.3 dex')    
+            color='royalblue',label='0.2 dex',text=True)
+        # plot_mean_halo_frac(bin_centers,three_dex_abd_matched[nn_str][0],\
+        #     axes_flat[zz],three_dex_abd_matched[nn_str][1],zz,\
+        #     color='hotpink',label='0.3 dex',text=True)    
 
 
         zz += 1
 
-plt.subplots_adjust(top=0.97,bottom=0.1,left=0.03,right=0.99,hspace=0.10,\
-    wspace=0.12)     
+plt.subplots_adjust(top=0.93,bottom=0.21,left=0.06,right=0.99,hspace=0.00,\
+    wspace=0)     
+# plt.tight_layout()
 
 plt.show()          

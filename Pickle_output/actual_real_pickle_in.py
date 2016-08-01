@@ -292,7 +292,7 @@ def plot_every_med(bin_cens,upper,lower,ax,plot_idx,\
     ax.set_yticklabels(np.arange(1,10,4))
     ax.fill_between(bin_cens,upper,lower,color=color,alpha=alpha,label=label)
     title = r"\boldmath$N=%d$"%(neigh_val)
-    if plot_idx  ==1:
+    if plot_idx  ==3:
         ax.text(0.05, 0.05, title,horizontalalignment='left',\
                     verticalalignment='bottom',transform=ax.transAxes,\
                     fontsize=va.size_text)
@@ -302,8 +302,9 @@ def plot_every_med(bin_cens,upper,lower,ax,plot_idx,\
             label_eco = None
         if neigh_val == 5:
             ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=va.size_xlabel)
-    ax.errorbar(bin_cens,eco_vals[0],yerr=0.1,lolims=eco_vals[1],\
-        uplims=eco_vals[2],\
+    ybot = np.array(eco_vals[0] - eco_vals[1])            
+    ytop = np.array(eco_vals[2] - eco_vals[0])            
+    ax.errorbar(bin_cens,eco_vals[0],yerr=(ybot,ytop),\
                 color='deeppink',linewidth=1,label=label_eco)
     if neigh_val == 1:
         ax.set_ylabel(r'$D_{N}\ \textnormal{(Mpc)}$',fontsize = \

@@ -64,7 +64,7 @@ def Index(directory, datatype):
 dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
 dirpath += r"\Stellar_mass_env_density\Catalogs"
 dirpath += r"\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_scatter_mocks"
-dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p3_ECO_Mocks"
+dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p1_ECO_Mocks"
 
 # dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
 # dirpath += r"\Stellar_mass_env_Density\Catalogs"
@@ -225,18 +225,17 @@ fig, ax = plt.subplots()
 ax.set_ylim(9.1,12)
 ax.set_xlim(10.7,14.5)
 
-# ax.scatter(logMhalo_arr_cent[0],logmstar_arr_cent[0],color='royalblue',marker='o',\
-#     s=1,label='Centrals')
-# ax.scatter(logMhalo_arr_sats[0],logmstar_arr_sats[0],color='crimson',marker='o',\
-#     s=1,label='Satellites')
+ax.scatter(logMhalo_arr_cent[0],logmstar_arr_cent[0],color='royalblue',marker='o',\
+    s=1,label='Centrals')
+ax.scatter(logMhalo_arr_sats[0],logmstar_arr_sats[0],color='crimson',marker='o',\
+    s=1,label='Satellites')
 
 # ax.plot(bin_centers,test_mean,color='darkmagenta',linewidth=2,\
     # label='Mean (Single Mock)')
 
 ax.plot(log_mhalo_arr_h07, log_mstar_arr_h07,linewidth=2,\
     color='lime',label='Behroozi et al. 2010')
-# ax.errorbar(scatter_line,10.5,yerr=0.1,lolims=(10.5-0.15),uplims\
-#     =(10.5+0.15),color='fuchsia',linewidth=2,marker='.')
+ax.errorbar(scatter_line,10.5,yerr=0.05,color='fuchsia',linewidth=2,marker='.')
 
 ax.set_xlabel(r'$\log\ (M_{Halo}/M_{\odot})$',fontsize=va.size_xlabel)
 ax.set_ylabel(r'$\log\ (M_{*}/M_{\odot})$',\
@@ -244,8 +243,8 @@ ax.set_ylabel(r'$\log\ (M_{*}/M_{\odot})$',\
 ax.set_xticks(np.arange(11,14.5,0.5))
 ax.set_yticks(np.arange(9.5,12,0.5))
 ax.tick_params(axis='both', labelsize=va.size_tick)
-# ax.text(0.05,0.7,'Scatter = 0.3 dex',fontsize=va.size_text,transform=ax.transAxes,\
-#     weight='bold',verticalalignment='bottom')
+ax.text(0.05,0.7,'Scatter = 0.1 dex',fontsize=va.size_text,transform=ax.transAxes,\
+    weight='bold',verticalalignment='bottom')
 ax.legend(loc='upper left',fontsize=14)
 plt.tight_layout()
 # ax.set_title('Galaxy Stellar-to-Halo Mass Relation',fontsize=20)

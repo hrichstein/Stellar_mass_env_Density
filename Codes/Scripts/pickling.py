@@ -1,6 +1,7 @@
 from __future__ import division, absolute_import
 
 import astropy.stats
+import cPickle as pickle
 import glob
 import math
 import matplotlib.pyplot as plt 
@@ -11,6 +12,14 @@ import os
 import pandas as pd
 from scipy import integrate,optimize,spatial
 
+
+dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
+dirpath += r"\Catalogs\\Mocks_Scatter_Abundance_Matching"
+dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p3_ECO_Mocks"
+
+pickle_out = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_Density"
+pickle_out+= r"\Pickle_output"
+iter_num = 2
 
 # In[2]:
 
@@ -497,13 +506,98 @@ def mean_bin_mass(mass_dist,bins,kk):
 #median from bin_func
 
 
-# In[9]:
+###############################################################################
 
-dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
-dirpath += r"\Catalogs\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_"
-dirpath += r"scatter_mocks\Resolve_plk_5001_so_mvir_scatter0p1_ECO_Mocks"
+def eco_hist_calcs(mass,bins,dlogM):
+    """
+    Returns dictionaries with the counts for the upper
+        and lower density portions; calculates the 
+        three different percentile cuts for each mass
+        array given
+    
+    Parameters
+    ----------
+    mass: array-like
+        A 1D array with log stellar mass values, assumed
+        to be an order which corresponds to the ascending 
+        densities; (necessary, as the index cuts are based 
+        on this)
+    bins: array-like
+        A 1D array with the values which will be used as the bin edges   
+    dlogM: float-like
+        The log difference between bin edges
+        
+    Returns
+    -------
+    hist_dict_low: dictionary-like
+        A dictionary with three keys (the frac vals), with arrays
+        as values. The values for the lower density cut
+    hist_dict_high: dictionary like
+        A dictionary with three keys (the frac vals), with arrays
+        as values. The values for the higher density cut
+    """
+    hist_dict_low  = {}
+    hist_dict_high = {}
+    bin_cens_low   = {}
+    bin_cens_high  = {}
+    frac_val  = np.array([2,4,10])
+    frac_dict = {2:0,4:1,10:2}
+    
+    edges = bins
+    
+    bin_centers = 0.5 * (edges[:-1]+edges[1:])
+    
+    low_err   = [[] for xx in xrange(len(frac_val))]
+    high_err  = [[] for xx in xrange(len(frac_val))]
+    
+    for ii in frac_val:
+#         hist_dict_low[ii]  = {}
+#         hist_dict_high[ii] = {}
+    
+        frac_data     = int(len(mass)/ii)
+        
+        frac_mass     = mass[0:frac_data]
+        counts, edges = np.histogram(frac_mass,bins)
+        low_counts    = (counts/float(len(frac_mass))/dlogM)
+        
+        non_zero = (low_counts!=0)
+        low_counts_1 = low_counts[non_zero]
+        hist_dict_low[ii]  = low_counts_1
+        bin_cens_low[ii]   = bin_centers[non_zero]
+        
+        ##So... I don't actually know if I need to be calculating error
+        ##on the mocks. I thought I didn't, but then, I swear someone
+        ##*ahem (Victor)* said to. So I am. Guess I'm not sure they're
+        ##useful. But I'll have them if necessary. And ECO at least
+        ##needs them.
+        
+        low_err = np.sqrt(counts)/len(frac_mass)/dlogM
+        low_err_1 = low_err[non_zero]
+        err_key = 'err_{0}'.format(ii)
+        hist_dict_low[err_key] = low_err_1
+        
+        frac_mass_2        = mass[-frac_data:]
+        counts_2, edges_2  = np.histogram(frac_mass_2,bins)
+        high_counts        = (counts_2/float(len(frac_mass_2))/dlogM)
+        
+        non_zero = (high_counts!=0)
+        high_counts_1 = high_counts[non_zero]
+        hist_dict_high[ii] = high_counts_1
+        bin_cens_high[ii]  = bin_centers[non_zero]
+        
+        high_err = np.sqrt(counts_2)/len(frac_mass_2)/dlogM
+        high_err_1 = high_err[non_zero]
+        hist_dict_high[err_key] = high_err_1
+    
+    return hist_dict_low, hist_dict_high, bin_cens_low, bin_cens_high
 
-usecols  = (0,1,4,8,13)
+
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+
+usecols  = (0,1,2,4,13)
 dlogM    = 0.2
 neigh_dict = {1:0,2:1,3:2,5:3,10:4,20:5}
 
@@ -512,7 +606,7 @@ neigh_dict = {1:0,2:1,3:2,5:3,10:4,20:5}
 
 ECO_cats = (Index(dirpath,'.dat'))
 
-names    = ['ra','dec','Halo_ID','cz','logMstar']
+names    = ['ra','dec','cz','Halo_ID','logMstar']
 
 PD = [[] for ii in range(len(ECO_cats))]
 
@@ -528,16 +622,6 @@ PD_comp  = [(PD_comp_1[ii][PD_comp_1[ii].logMstar <=11.77]) for ii in range(len(
 
 [(PD_comp[ii].reset_index(drop=True,inplace=True)) for ii in range(len(ECO_cats))]
 
-
-# In[11]:
-
-for ii in range(len(ECO_cats)):
-    print len(PD_comp[ii][PD_comp[ii].logMstar >=11.5])
-# for ii in range(len(ECO_cats)):
-#     print PD_comp[ii]
-
-
-# In[12]:
 
 min_max_mass_arr = []
 
@@ -588,20 +672,6 @@ nn_specs       = [(np.array(nn_arr).T[ii].T[neigh_vals].T) for ii in            
 nn_mass_dist   = np.array([(np.column_stack((mass_arr[qq],nn_specs[qq])))                     for qq in range(len(coords_test))])
 
 nn_neigh_idx      = np.array([(np.array(nn_idx).T[ii].T[neigh_vals].T) for ii in                     range(len(coords_test))])
-
-
-# In[13]:
-
-bins
-
-
-# In[14]:
-
-# truth_vals[ii] = {}
-# for kk in range(10):
-#     truth_list.append(np.unique(halo_id_arr[ii][nn_neigh_idx[ii].T[neigh_dict[jj]]\
-#                                   [halo_id_arr[ii][nn_neigh_idx[ii].T[neigh_dict[jj]]].keys()[kk]]])==halo_id_arr[ii][kk])
-#     truth_vals[ii][jj] = truth_list
 
 truth_vals = {}
 for ii in range(len(halo_id_arr)):
@@ -654,47 +724,6 @@ for ii in neigh_vals:
     oo_tot_std  = [np.nanstd(oo_tot[uu])/np.sqrt(len(halo_frac)) for uu in xrange(len(oo_tot))]
     mean_mock_halo_frac[bin_str] = [oo_tot_mean,oo_tot_std]
 
-    
-
-
-# In[17]:
-
-# (mean_mock_halo_frac['1'])
-
-
-# In[18]:
-
-def plot_halo_frac(bin_centers,y_vals,ax,plot_idx):
-    titles = [1,2,3,5,10,20]
-    ax.set_xlim(9.1,11.9)
-    ax.set_xticks(np.arange(9.5,12.,0.5)) 
-    ax.tick_params(axis='x', which='major', labelsize=16)
-    title_here = 'n = {0}'.format(titles[plot_idx])
-    ax.text(0.05, 0.95, title_here,horizontalalignment='left',            verticalalignment='top',transform=ax.transAxes,fontsize=18)
-    if plot_idx == 4:
-        ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=20)
-    ax.plot(bin_centers,y_vals,color='silver')
-    
-def plot_mean_halo_frac(bin_centers,mean_vals,ax,std):
-    ax.errorbar(bin_centers,mean_vals,yerr=std,color='deeppink')
-
-
-# In[19]:
-
-mass_bin_test = np.digitize(mass_arr[0],bins)
-one_zero_test = truth_vals[0][1].astype(int)
-
-test_arr_ones = one_zero_test[mass_bin_test==1]
-
-print len(test_arr_ones)
-print len(mass_bin_test)
-
-print np.count_nonzero(test_arr_ones==1)
-
-
-# In[20]:
-
-# nn_dist    = {}
 nn_dens    = {}
 mass_dat   = {}
 ratio_info = {}
@@ -721,57 +750,143 @@ for ii in range(len(coords_test)):
 
         bin_centers, mass_freq[ii], ratio_info[ii][neigh_vals[jj]],bin_cens_diff[ii][neigh_vals[jj]] =                             plot_calcs(mass_dat[ii][neigh_vals[jj]],bins,dlogM)
 
-all_mock_meds = [[] for xx in range(len(nn_mass_dist))]
-mock_meds_bins = [[] for xx in range(len(nn_mass_dist))]
-all_mock_mass_means = [[] for xx in range(len(nn_mass_dist))]
+###############################################################################        
+
+all_mock_meds = {}
+mock_meds_bins = {}
+all_mock_mass_means = {}
 
 for vv in range(len(nn_mass_dist)):
+    all_mock_meds[vv] = {}
+    mock_meds_bins[vv]= {}
+    all_mock_mass_means[vv] = {}
     for jj in range(len(nn_mass_dist[vv].T)-1):
-        for vv in range(len(nn_mass_dist)):
-            all_mock_meds[vv],mock_meds_bins[vv] = (bin_func(nn_mass_dist[vv],bins,(jj+1)))
-            all_mock_mass_means[vv] = (mean_bin_mass(nn_mass_dist[vv],bins,(jj+1))) 
+        all_mock_meds[vv][neigh_vals[jj]],mock_meds_bins[vv][neigh_vals[jj]]\
+         = (bin_func(nn_mass_dist[vv],bins,(jj+1)))
+        all_mock_mass_means[vv][neigh_vals[jj]] =\
+         (mean_bin_mass(nn_mass_dist[vv],bins,(jj+1)))     
 
-    
-# med_plot_arr = [([[] for yy in xrange(len(nn_mass_dist))]) \
-#                                             for xx in xrange(len(neigh_vals))]
+med_plot_arr = {}
 
-# for ii in range(len(neigh_vals)):
-#     for jj in range(len(nn_mass_dist)):
-#         med_plot_arr[ii][jj] = all_mock_meds[jj][ii]    
+for ii in range(len(neigh_vals)):
+    med_plot_arr[neigh_vals[ii]] = {}
+    for jj in range(len(nn_mass_dist)):
+        med_plot_arr[neigh_vals[ii]][jj] = all_mock_meds[jj][neigh_vals[ii]]
 
-# for ii in range(len(neigh_vals)):
-#     for jj in range(len(nn_mass_dist)):
-#         print len(all_mock_meds[jj][ii])
-
-# mass_freq_plot  = (np.array(mass_freq))
-# max_lim = [[] for xx in range(len(mass_freq_plot.T))]
-# min_lim = [[] for xx in range(len(mass_freq_plot.T))]
-# for jj in range(len(mass_freq_plot.T)):
-#     max_lim[jj] = max(mass_freq_plot.T[jj])
-#     min_lim[jj] = min(mass_freq_plot.T[jj])
+#########For finding bands for ratios
+nn_dict   = {1:0,2:1,3:2,5:3,10:4,20:5}
+coln_dict = {2:0,4:1,10:2}
 
 
-# In[21]:
 
-# haloid_neigh = halo_id_arr[ii][nn_neigh_idx[ii].T[neigh_dict[jj]]].values
-# B = haloid_neigh == halo_id_arr[ii].values
-# print(B)
-# print(haloid_neigh)
-# print(halo_id_arr[ii].values)
+frac_vals   = [2,4,10]
+nn_plot_arr = {}
 
+for ii in range(len(neigh_vals)):
+    nn_plot_arr[neigh_vals[ii]] = {}
+    for jj in range(len(nn_mass_dist)):
+        nn_plot_arr[neigh_vals[ii]][jj] = (ratio_info[jj][neigh_vals[ii]])
 
-# In[22]:
-
-for vv in range(len(nn_mass_dist)):
-    print max(nn_mass_dist[vv].T[0])
-    print max(np.digitize(nn_mass_dist[vv].T[0],bins))
-print bins    
+plot_frac_arr = {}
 
 
-# In[27]:
+
+for ii in (neigh_vals):
+    plot_frac_arr[ii] = {}
+    for hh in (frac_vals):
+        plot_frac_arr[ii][hh] = {}
+        for jj in range(len(nn_mass_dist)):
+            plot_frac_arr[ii][hh][jj] = \
+                nn_plot_arr[ii][jj][0][hh]
+
+
+A = {}
+
+
+nn_keys  = np.sort(nn_dict.keys())
+col_keys = np.sort(coln_dict.keys())
+zz_num   = len(plot_frac_arr[1][2])
+
+for nn in neigh_vals:
+    for vv in frac_vals:
+        bin_str    = '{0}_{1}'.format(nn,vv)
+        for cc in range(zz_num):
+            zz_arr = plot_frac_arr[nn][vv][cc]
+            if len(zz_arr) == num_of_bins:
+                n_elem = len(zz_arr)
+            else:
+                while len(zz_arr) < num_of_bins:
+                    zz_arr_list = list(zz_arr)
+                    zz_arr_list.append(np.nan)
+                    zz_arr = np.array(zz_arr_list)
+                n_elem = len(zz_arr)
+            if cc == 0:
+                zz_tot = np.zeros((n_elem,1))
+            zz_tot = np.insert(zz_tot,len(zz_tot.T),zz_arr,1)
+        zz_tot = np.array(np.delete(zz_tot,0,axis=1))
+        for kk in xrange(len(zz_tot)):
+            zz_tot[kk][zz_tot[kk] == np.inf] = np.nan
+        zz_tot_max = [np.nanmax(zz_tot[kk]) for kk in xrange(len(zz_tot))]
+        zz_tot_min = [np.nanmin(zz_tot[kk]) for kk in xrange(len(zz_tot))]
+        A[bin_str] = [zz_tot_max,zz_tot_min]     
+
+pickle_out_rats = pickle_out
+pickle_out_rats+=r"\ratio_bands.p"
+
+if iter_num == 0:
+    rat_band_data = [A]
+    pickle.dump(rat_band_data, open(pickle_out_rats, "wb"))
+else:
+    rat_band_data_new = pickle.load(open(pickle_out_rats, "rb"))
+    rat_band_data_new.append(A)
+    pickle.dump(rat_band_data_new,open(pickle_out_rats,"wb"))
+
+
+
+### dict A now houses the upper and lower limits needed for the bands
+#####Bands for stellar mass function    
+ 
+
+#Bands for median distances
+
+B = {}
+yy_num = len(med_plot_arr[neigh_vals[0]])
+
+for nn in neigh_vals:
+    for ii in range(yy_num):
+        med_str  = '{0}'.format(nn)
+        yy_arr   = med_plot_arr[nn][ii]
+        if len(yy_arr) == num_of_bins:
+            n_y_elem = len(yy_arr)
+        else:
+            while len(yy_arr) < num_of_bins:
+                yy_arr_list = list(yy_arr)
+                yy_arr_list.append(np.nan)
+                yy_arr = np.array(yy_arr_list)
+            n_y_elem = len(yy_arr)
+        if ii == 0:
+            yy_tot = np.zeros((n_y_elem,1))
+        yy_tot = np.insert(yy_tot,len(yy_tot.T),yy_arr,1)
+    yy_tot = np.array(np.delete(yy_tot,0,axis=1))
+    yy_tot_max = [np.nanmax(yy_tot[kk]) for kk in xrange(len(yy_tot))]
+    yy_tot_min = [np.nanmin(yy_tot[kk]) for kk in xrange(len(yy_tot))]
+    B[med_str] = [yy_tot_max,yy_tot_min]
+
+pickle_out_meds = pickle_out
+pickle_out_meds+=r"\med_bands.p"
+
+if iter_num == 0:
+    med_band_data = [B]
+    pickle.dump(med_band_data, open(pickle_out_meds, "wb"))
+else:
+    med_band_data_new = pickle.load(open(pickle_out_meds, "rb"))
+    med_band_data_new.append(B)
+    pickle.dump(med_band_data_new,open(pickle_out_meds,"wb"))    
+
+
+global bins_curve_fit
 
 bins_curve_fit = bins.copy()
-global bins_curve_fit
 
 
 # In[28]:
@@ -821,8 +936,48 @@ for jj in (range(len(eco_mass_dat))):
     eco_medians[jj],eco_med_bins[jj] = np.array(bin_func(eco_mass_dist,bins,(jj+1),        bootstrap=True))
     eco_mass_means[jj] = (mean_bin_mass(eco_mass_dist,bins,(jj+1))) 
 
+###ECO hists
 
-# In[30]:
+eco_low  = {}
+eco_high = {}
+eco_low_bins = {}
+eco_high_bins = {}
+for jj in range(len(neigh_vals)):
+    eco_low[neigh_vals[jj]]  = {}
+    eco_high[neigh_vals[jj]] = {}
+    eco_low_bins[neigh_vals[jj]]  = {}
+    eco_high_bins[neigh_vals[jj]] = {}
+    eco_low[neigh_vals[jj]], eco_high[neigh_vals[jj]],\
+         eco_low_bins[neigh_vals[jj]], eco_high_bins[neigh_vals[jj]]=\
+              eco_hist_calcs(eco_mass_dat[jj],bins,dlogM)
+###############################################################################            
+
+pickle_out_eco = pickle_out
+pickle_out_eco+=r"\eco_hists.p"
+
+if iter_num == 0:
+    eco_bins_data = [eco_low,eco_high,eco_low_bins,eco_high_bins]
+    pickle.dump(eco_bins_data, open(pickle_out_eco, "wb"))
+
+
+pickle_out_eco_1 = pickle_out
+pickle_out_eco_1+=r"\eco_data.p"
+
+
+if iter_num == 0:
+    eco_band_data = [eco_low,eco_high,eco_ratio_info, eco_final_bins,eco_medians]
+    pickle.dump(eco_band_data, open(pickle_out_eco_1, "wb"))
+
+
+# else:
+#     eco_band_data_new = pickle.load(open(pickle_out_eco, "rb"))
+#     eco_band_data_new.append([])
+#     pickle.dump(eco_band_data_new,open(pickle_out_eco,"wb"))   
+
+
+
+
+#########Histograms
 
 hist_low_info  = {}
 hist_high_info = {}
@@ -832,15 +987,101 @@ for ii in xrange(len(coords_test)):
     hist_high_info[ii] = {}
     
     for jj in range(len(neigh_vals)):
-        hist_low_info[ii][neigh_vals[jj]],hist_high_info[ii][neigh_vals[jj]]         = hist_calcs(mass_dat[ii][neigh_vals[jj]],bins,dlogM)
+        hist_low_info[ii][neigh_vals[jj]],hist_high_info[ii][neigh_vals[jj]] \
+                = hist_calcs(mass_dat[ii][neigh_vals[jj]],bins,dlogM)
         
 frac_vals     = [2,4,10]
-hist_low_arr  = [[[] for yy in xrange(len(nn_mass_dist))] for xx in     xrange(len(neigh_vals))]
-hist_high_arr = [[[] for yy in xrange(len(nn_mass_dist))] for xx in     xrange(len(neigh_vals))]
+hist_low_arr  = [[[] for yy in xrange(len(nn_mass_dist))] for xx in     \
+xrange(len(neigh_vals))]
+hist_high_arr = [[[] for yy in xrange(len(nn_mass_dist))] for xx in     \
+xrange(len(neigh_vals))]
 
 for ii in range(len(neigh_vals)):
     for jj in range(len(nn_mass_dist)):
         hist_low_arr[ii][jj]  = (hist_low_info[jj][neigh_vals[ii]])
         hist_high_arr[ii][jj] = (hist_high_info[jj][neigh_vals[ii]])
-        
 
+plot_low_hist = {}
+plot_high_hist = {}
+
+
+for ii in range(len(neigh_vals)):
+    plot_low_hist[ii] = {}
+    plot_high_hist[ii] = {}
+    for hh in range(len(frac_vals)):
+        plot_low_hist[ii][hh] = {}
+        plot_high_hist[ii][hh] = {}
+        for jj in range(len(nn_mass_dist)):
+            plot_low_hist[ii][hh][jj]  = hist_low_arr[ii][jj][frac_vals[hh]]        
+            plot_high_hist[ii][hh][jj] = hist_high_arr[ii][jj][frac_vals[hh]]  
+
+###Histogram bands                  
+C = {}
+D = {}
+nn_dict   = {1:0,2:1,3:2,5:3,10:4,20:5}
+coln_dict = {2:0,4:1,10:2}
+
+nn_keys   = np.sort(nn_dict.keys())
+col_keys  = np.sort(coln_dict.keys())
+
+vv_num    = len(plot_low_hist[nn_dict[1]][coln_dict[2]])
+
+for nn in nn_keys:
+    for coln in col_keys:
+        bin_str    = '{0}_{1}'.format(nn,coln)
+        for cc in range(vv_num):
+            vv_arr = np.array(plot_low_hist[nn_dict[nn]][coln_dict[coln]][cc])
+            if len(vv_arr) == num_of_bins:
+                n_elem = len(vv_arr)
+            else:
+                while len(vv_arr) < num_of_bins:
+                    vv_arr_list = list(vv_arr)
+                    vv_arr_list.append(np.nan)
+                    vv_arr = np.array(vv_arr_list)
+                n_elem = len(vv_arr)
+            if cc == 0:
+                vv_tot = np.zeros((n_elem,1))
+            vv_tot = np.insert(vv_tot,len(vv_tot.T),vv_arr,1)
+        vv_tot = np.array(np.delete(vv_tot,0,axis=1))
+        for kk in xrange(len(vv_tot)):
+            vv_tot[kk][vv_tot[kk] == np.inf] = np.nan
+        vv_tot_max = [np.nanmax(vv_tot[kk]) for kk in xrange(len(vv_tot))]
+        vv_tot_min = [np.nanmin(vv_tot[kk]) for kk in xrange(len(vv_tot))]
+        C[bin_str] = [vv_tot_max,vv_tot_min]
+        
+hh_num   = len(plot_high_hist[nn_dict[1]][coln_dict[2]])
+
+for nn in nn_keys:
+    for coln in col_keys:
+        bin_str    = '{0}_{1}'.format(nn,coln)
+        for cc in range(hh_num):
+            hh_arr = np.array(plot_high_hist[nn_dict[nn]][coln_dict[coln]][cc])
+            if len(hh_arr) == num_of_bins:
+                n_elem = len(hh_arr)
+            else:
+                while len(hh_arr) < num_of_bins:
+                    vv_arr_list = list(hh_arr)
+                    vv_arr_list.append(np.nan)
+                    hh_arr = np.array(vv_arr_list)
+                n_elem = len(hh_arr)
+            if cc == 0:
+                hh_tot = np.zeros((n_elem,1))
+            hh_tot = np.insert(hh_tot,len(hh_tot.T),hh_arr,1)
+        hh_tot     = np.array(np.delete(hh_tot,0,axis=1))
+        for kk in xrange(len(hh_tot)):
+            hh_tot[kk][hh_tot[kk] == np.inf] = np.nan
+        hh_tot_max = [np.nanmax(hh_tot[kk]) for kk in xrange(len(hh_tot))]
+        hh_tot_min = [np.nanmin(hh_tot[kk]) for kk in xrange(len(hh_tot))]
+        D[bin_str] = [hh_tot_max,hh_tot_min]        
+
+pickle_out_hists = pickle_out
+pickle_out_hists+=r"\hist_bands.p"
+
+if iter_num == 0:
+    hist_band_data = [C,D]
+    pickle.dump(hist_band_data, open(pickle_out_hists, "wb"))
+else:
+    hist_band_data_new = pickle.load(open(pickle_out_hists, "rb"))
+    hist_band_data_new.append(C)
+    hist_band_data_new.append(D)
+    pickle.dump(hist_band_data_new,open(pickle_out_hists,"wb"))        

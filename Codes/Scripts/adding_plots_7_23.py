@@ -158,7 +158,7 @@ def Bins_array_create(arr, base=10):
 
 # In[254]:
 
-def sph_to_cart(ra,dec,cz):
+def sph_to_cart(ra,dec,cz,h):
     """
     Converts spherical coordinates to Cartesian coordinates.
 
@@ -176,7 +176,7 @@ def sph_to_cart(ra,dec,cz):
     coords: array-like, shape = N by 3
         x, y, and z coordinates
     """
-    cz_dist = cz/70. #converts velocity into distance
+    cz_dist = cz/float(h) #converts velocity into distance
     x_arr   = cz_dist*np.cos(np.radians(ra))*np.cos(np.radians(dec))
     y_arr   = cz_dist*np.sin(np.radians(ra))*np.cos(np.radians(dec))
     z_arr   = cz_dist*np.sin(np.radians(dec))
@@ -553,7 +553,8 @@ dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p2_ECO_Mocks"
 # figsave_path+= r"\three_dec"
 
 
-usecols  = (0,1,4,8,13)
+# usecols  = (0,1,4,8,13)
+usecols = (0,1,2,4,13)
 dlogM    = 0.2
 neigh_dict = {1:0,2:1,3:2,5:3,10:4,20:5}
 
@@ -562,7 +563,9 @@ neigh_dict = {1:0,2:1,3:2,5:3,10:4,20:5}
 
 ECO_cats = (Index(dirpath,'.dat'))
 
-names    = ['ra','dec','Halo_ID','cz','logMstar']
+# names    = ['ra','dec','Halo_ID','cz','logMstar']
+
+names    = ['ra','dec','cz','Halo_ID','logMstar']
 
 PD = [[] for ii in range(len(ECO_cats))]
 
@@ -614,7 +617,7 @@ mass_arr  = np.array([(PD_comp[ii].logMstar)     for ii in range(len(PD_comp))])
 halo_id_arr  = np.array([(PD_comp[ii].Halo_ID)     for ii in range(len(PD_comp))])
 
 
-coords_test = np.array([sph_to_cart(ra_arr[vv],dec_arr[vv],cz_arr[vv])\
+coords_test = np.array([sph_to_cart(ra_arr[vv],dec_arr[vv],cz_arr[vv],70)\
                  for vv in range(len(ECO_cats))])
 
 neigh_vals  = np.array([1,2,3,5,10,20])
@@ -850,7 +853,7 @@ dec_eco  = (np.array(eco_comp)).T[1]
 cz_eco   = (np.array(eco_comp)).T[2] 
 mass_eco = (np.array(eco_comp)).T[3]
 
-coords_eco        = sph_to_cart(ra_eco,dec_eco,cz_eco)
+coords_eco        = sph_to_cart(ra_eco,dec_eco,cz_eco,70)
 eco_neighbor_tree = spatial.cKDTree(coords_eco)
 eco_tree_dist     = np.array(eco_neighbor_tree.query(coords_eco,        \
             (neigh_vals[-1]+1))[0])
@@ -1104,8 +1107,8 @@ fig,ax  = plt.subplots(figsize=(12,12))
 # ax.set_title('Mass Distribution',fontsize=18)
 ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=va.size_xlabel)
 ax.set_ylabel\
-(r'$\log\ (\frac{\textnormal{N}_{gal/bin}}{\textnormal{N}_{total}*dlogM})$',\
-                fontsize=va.size_ylabel)
+(r'$\log\ \left(\frac{\textnormal{N}_{gal/bin}}{\textnormal{N}_{total}\ * \ dlogM}\right)$',\
+                fontsize=24)
 ax.set_yscale('log')
 ax.set_xlim(9.1,11.8)
 ax.tick_params(axis='both', labelsize=va.size_tick)
@@ -1728,3 +1731,57 @@ plt.show()
 #         zz_tot_max = [np.nanmax(zz_tot[kk]) for kk in xrange(len(zz_tot))]
 #         zz_tot_min = [np.nanmin(zz_tot[kk]) for kk in xrange(len(zz_tot))]
 #         A[bin_str] = [zz_tot_max,zz_tot_min]
+
+
+def hist_nn_dist(distance,neigh_val,ax,mass_bins,mass):
+
+    edges        = mass_bins
+
+    # print 'length bins:'
+    # print len(bins)
+
+    digitized    = np.digitize(mass,edges)
+    digitized   -= int(1)
+    max_num = max(digitized)
+    idx = list(np.where(mass[digitized==0]))
+    idx_2 = idx.append(list(np.where(mass[digitized==1])))
+    # idx_3 = idx_2.append(np.where(mass[digitized==2]))
+    # idx_4 = idx_3.append(np.where(mass[digitized==3]))
+    # idx_5 = np.array(idx_4)
+    # print idx_5
+    # print type(idx_5)
+    print idx_2
+    print type(idx_2)
+    # idx = [digitized==(max_num-6)]
+    # idx = [digitized==0]
+    # sample       = distance[neigh_val][idx]
+
+    # bins = Bins_array_create(sample,0.25)
+    # counts,edges = np.histogram(sample,bins)
+    # bin_centers = 0.5*(edges[1:]+edges[:-1])
+
+    # # counts = counts/float(len(distance[neigh_val]))/0.5
+
+    # # fig,ax = plt.subplots()
+    # ax.set_yscale('symlog')
+    # ax.set_ylim(10**0,10**3)
+    # ax.set_ylabel('Counts')
+    # ax.set_xlabel(r'Distance to Nth Nearest Neighbor \textnormal{(Mpc)}')
+    # ax.step(bin_centers,counts)
+
+    # plt.show()
+
+# fig, ax = plt.subplots(nrows=2,ncols=3,sharey=True)
+fig, ax = plt.subplots()
+# axes_flat = ax.flatten()
+
+# zz = 0
+# while zz <= 4:
+#     for ii in range(len(nn_mass_dist)):
+#         for kk in range(len(nn_mass_dist)-2):
+#             hist_nn_dist(nn_mass_dist[ii].T,(kk+1),axes_flat[kk])
+#     zz += 1
+for ii in range(len(nn_mass_dist)):
+    hist_nn_dist(nn_mass_dist[ii].T,1,ax,bins,nn_mass_dist[ii].T[0])
+        
+plt.show()

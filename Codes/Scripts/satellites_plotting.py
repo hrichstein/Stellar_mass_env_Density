@@ -531,7 +531,7 @@ def mean_bin_mass(mass_dist,bins,kk):
 dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
 dirpath += r"\Stellar_mass_env_Density\Catalogs"
 dirpath += r"\Mocks_Scatter_Abundance_Matching"
-dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p1_ECO_Mocks"
+dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p2_ECO_Mocks"
 
 
 # figsave_path = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
@@ -1667,3 +1667,30 @@ plt.subplots_adjust(left=0.05, bottom=0.09, right=0.98, top=0.98,\
 
 plt.show() 
 
+def hist_nn_dist(distance,neigh_val,ax):
+    bins = Bins_array_create(distance[neigh_val],1)
+    counts,edges = np.histogram(distance[neigh_val],bins)
+    bin_centers = 0.5*(edges[1:]+edges[:-1])
+
+    # counts = counts/float(len(distance[neigh_val]))/0.5
+
+    # fig,ax = plt.subplots()
+    ax.set_yscale('symlog')
+    ax.set_ylabel('Counts')
+    ax.set_xlabel(r'Distance to Nth Nearest Neighbor \textnormal{(Mpc)}')
+    ax.step(bin_centers,counts)
+
+    # plt.show()
+
+fig, ax = plt.subplots(nrows=2,ncols=3,sharey=True)
+axes_flat = ax.flatten()
+
+zz = 0
+while zz <= 4:
+    for ii in range(len(nn_mass_dist)):
+        for kk in range(len(nn_mass_dist)-2):
+            hist_nn_dist(nn_mass_dist[ii].T,(kk+1),axes_flat[kk])
+    zz += 1
+        
+plt.tight_layout()
+plt.show()

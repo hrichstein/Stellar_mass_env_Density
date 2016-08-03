@@ -22,10 +22,11 @@ from scipy import integrate,optimize,spatial
 from mpl_toolkits.mplot3d import Axes3D
 
 class Vars(object):
-    size_xlabel = 24
-    size_ylabel = 24
-    size_text   = 18
-    size_tick   = 18
+    size_xlabel = 48
+    size_ylabel = 48
+    size_text   = 36
+    size_tick   = 36
+    size_legend = 36
 
 va = Vars()
 
@@ -1106,9 +1107,9 @@ for ss in neigh_vals:
 fig,ax  = plt.subplots(figsize=(12,12))
 # ax.set_title('Mass Distribution',fontsize=18)
 ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=va.size_xlabel)
-ax.set_ylabel\
-(r'$\log\ \left(\frac{\textnormal{N}_{gal/bin}}{\textnormal{N}_{total}\ * \ dlogM}\right)$',\
-                fontsize=24)
+ax.set_ylabel("Counts",fontsize=va.size_ylabel)
+# (r'$\log\ \left(\frac{\textnormal{N}_{gal/bin}}{\textnormal{N}_{total}\ * \ dlogM}\right)$',\
+                # fontsize=24)
 ax.set_yscale('log')
 ax.set_xlim(9.1,11.8)
 ax.tick_params(axis='both', labelsize=va.size_tick)
@@ -1118,9 +1119,9 @@ ax.tick_params(axis='both', labelsize=va.size_tick)
     # ax.fill_between(bin_centers,max_lim,min_lim,color='silver',alpha=0.1)
 ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='deeppink',\
             linewidth=2,label='ECO',drawstyle='steps-mid')
-ax.legend(loc='best')
+ax.legend(loc='best',fontsize=va.size_legend)
 
-plt.subplots_adjust(left=0.15, bottom=0.1, right=0.85, top=0.93,\
+plt.subplots_adjust(left=0.15, bottom=0.15, right=0.85, top=0.93,\
                     hspace=0.2,wspace=0.2)
 
 # plt.savefig(figsave_path + r"\stellar_mass_func")

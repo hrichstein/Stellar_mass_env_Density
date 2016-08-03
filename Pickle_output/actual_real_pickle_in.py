@@ -19,10 +19,11 @@ import pandas as pd
 from scipy import integrate,optimize,spatial
 
 class Vars(object):
-    size_xlabel = 24
-    size_ylabel = 24
-    size_text   = 18
-    size_tick   = 18
+    size_xlabel = 48
+    size_ylabel = 48
+    size_text   = 20
+    size_tick   = 24
+    size_legend = 24
 
 va = Vars()
 
@@ -207,15 +208,15 @@ def plot_every_rat(bin_cens,upper,lower,ax,plot_idx,neigh_val,eco_bins,\
             label_eco = 'ECO'
             # ax.set_ylabel(r'\begin{center}$\textnormal{Ratio of Quartiles} \\ \Large (N_{Q4}/N_{Q1})$\end{center}',
             #     fontsize=va.size_ylabel,multialignment='center')
-            ax.set_ylabel(r'$\textnormal{N}_{gal_{high}}\ /\ \textnormal{N}_{gal_{low}}$',
+            ax.set_ylabel(r'$\textnormal{N}_{high}\ /\ \textnormal{N}_{low}$',
                 fontsize=va.size_ylabel)            
         else:
             label_eco = None
-    ax.axhline(y=1,c="indigo",linewidth=1,zorder=0)
+    ax.axhline(y=1,c="darkorchid",linewidth=2,zorder=0)
     ax.errorbar(eco_bins,eco_vals,yerr=eco_err,\
                 color='deeppink',linewidth=1,label=label_eco)
     if neigh_val == 1:
-        ax.legend(loc='best',numpoints=1)
+        ax.legend(loc='best',numpoints=1,fontsize=va.size_legend)
 
 
 
@@ -275,7 +276,9 @@ while zz == 0:
     zz+=1
 
 # plt.tight_layout()
-plt.subplots_adjust(top=0.93,bottom=0.21,left=0.1,right=0.99,hspace=0.20,wspace=0)
+# plt.subplots_adjust(top=0.93,bottom=0.21,left=0.11,right=0.99,hspace=0.20,wspace=0.)
+plt.subplots_adjust(top=0.93,bottom=0.21,left=0.06,right=0.99,hspace=0.20,\
+    wspace=0)   
 plt.show()    
 
 ###############################################################################
@@ -311,7 +314,7 @@ def plot_every_med(bin_cens,upper,lower,ax,plot_idx,\
             va.size_ylabel)
     if plot_idx == 3:
         if neigh_val == 1:
-            ax.legend(loc='upper left',numpoints=1)
+            ax.legend(loc='upper left',numpoints=1,fontsize=va.size_legend)
 
 
 ###############################################################################
@@ -392,14 +395,14 @@ def plot_eco_hists(bins_high,bins_low,high_counts,low_counts,               \
                             yerr=high_counts_err,drawstyle='steps-mid',\
                                     color='deeppink',label=label_high)
         title = r"\boldmath$N=%d$"%(neigh_val)
-        ax.text(0.05, 0.27, title,horizontalalignment='left',\
+        ax.text(0.05, 0.55, title,horizontalalignment='left',\
                     verticalalignment='bottom',transform=ax.transAxes,\
                     fontsize=va.size_text)                                          
         if neigh_val == 1:
-            ax.set_ylabel\
-            (r'$\log\ (\frac{\textnormal{N}_{gal/bin}}{\textnormal{N}_{total}*dlogM})$',\
-                fontsize=va.size_ylabel)
-            ax.legend(loc='best') 
+            ax.set_ylabel('Counts',fontsize=va.size_ylabel)
+            # (r'$\log\ \left(\frac{\textnormal{N}_{gal/bin}}{\textnormal{N}_{total}\ * \ dlogM}\right)$',\
+                # fontsize=24)
+            ax.legend(loc='best',fontsize=va.size_legend) 
         if neigh_val == 5:
             ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=va.size_xlabel)    
                                      
@@ -438,5 +441,5 @@ while zz ==0:
             hists_dict_low[xx][1],xx)  
     zz+=1          
 
-plt.subplots_adjust(top=0.93,bottom=0.21,left=0.06,right=0.99,hspace=0.20,wspace=0)
+plt.subplots_adjust(top=0.93,bottom=0.21,left=0.11,right=0.99,hspace=0.20,wspace=0)
 plt.show()

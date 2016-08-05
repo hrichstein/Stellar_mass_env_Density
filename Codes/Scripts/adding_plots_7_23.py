@@ -536,17 +536,20 @@ def mean_bin_mass(mass_dist,bins,kk):
     return mean_mass 
 
 
-# In[259]:
+dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
+dirpath += r"\Catalogs\Beta_M1_Behroozi"
+dirpath += r"\ab_matching"
+dirpath += r"\Resolve_plk_5001_so_mvir_hod1_scatter0p2_mock1_ECO_Mocks"
 
 # dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
 # dirpath += r"\Stellar_mass_env_density\Catalogs"
 # dirpath += r"\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_scatter_mocks"
 # dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p1_ECO_Mocks"
 
-dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
-dirpath += r"\Stellar_mass_env_Density\Catalogs"
-dirpath += r"\Mocks_Scatter_Abundance_Matching"
-dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p2_ECO_Mocks"
+# dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
+# dirpath += r"\Stellar_mass_env_Density\Catalogs"
+# dirpath += r"\RESOLVE_ECO_Mocks_M1_Beta_new_mocks"
+# dirpath += r"\Resolve_plk_5001_so_mvir_hod1_scatter0p2_mock2_ECO_Mocks"
 
 # figsave_path = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
 # figsave_path+= r"\Stellar_mass_env_Density\Plots"
@@ -727,7 +730,7 @@ nrow = int(2)
 ncol = int(3)
 
 fig,axes = plt.subplots(nrows=nrow,ncols=ncol,                        \
-    figsize=(12,12),sharex=True)
+    figsize=(12,12),sharex=True,sharey=True)
 axes_flat = axes.flatten()
 
 zz = int(0)
@@ -876,28 +879,32 @@ eco_ratio_info    = [[] for xx in xrange(len(eco_mass_dat))]
 eco_final_bins    = [[] for xx in xrange(len(eco_mass_dat))]
 
 ###############################################################################
-fig,ax = plt.subplots()
+##2D ECO plot
 
-ax.scatter(ra_eco*24/360,dec_eco,marker='.',color='deeppink')
-ax.set_xlim(min(ra_eco*24/360),max(ra_eco*24/360))
-ax.set_ylim(0,50)
-ax.set_xlabel(r'RA \textnormal{(Hours)}',fontsize=va.size_xlabel)
-ax.set_ylabel(r'Dec \textnormal{(degrees)}',fontsize=va.size_ylabel)
-plt.show()
+# fig,ax = plt.subplots()
+
+# ax.scatter(ra_eco*24/360,dec_eco,marker='.',color='deeppink')
+# ax.set_xlim(min(ra_eco*24/360),max(ra_eco*24/360))
+# ax.set_ylim(0,50)
+# ax.set_xlabel(r'RA \textnormal{(Hours)}',fontsize=va.size_xlabel)
+# ax.set_ylabel(r'Dec \textnormal{(degrees)}',fontsize=va.size_ylabel)
+# plt.show()
 
 ###############################################################################
 
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-ax.scatter(coords_eco.T[0],coords_eco.T[1],coords_eco.T[2],color='deeppink',\
-    s=1,marker='.')
-ax.scatter(0,0,0,marker='*',s=200,color='darkorchid',\
-    edgecolor='')
-ax.set_ylabel('X (Mpc)',fontsize=va.size_text)
-ax.set_xlabel('Z (Mpc)',fontsize=va.size_text)
-ax.set_zlabel('Y (Mpc)',fontsize=va.size_text)
-plt.tight_layout()
-plt.show()
+##3D ECO plot
+
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection='3d')
+# ax.scatter(coords_eco.T[0],coords_eco.T[1],coords_eco.T[2],color='deeppink',\
+#     s=1,marker='.')
+# ax.scatter(0,0,0,marker='*',s=200,color='darkorchid',\
+#     edgecolor='')
+# ax.set_ylabel('X (Mpc)',fontsize=va.size_text)
+# ax.set_xlabel('Z (Mpc)',fontsize=va.size_text)
+# ax.set_zlabel('Y (Mpc)',fontsize=va.size_text)
+# plt.tight_layout()
+# plt.show()
 
 
 for qq in range(len(eco_mass_dat)):
@@ -1114,11 +1121,11 @@ ax.set_yscale('log')
 ax.set_xlim(9.1,11.8)
 ax.tick_params(axis='both', labelsize=va.size_tick)
 
-# for ii in range(len(mass_freq)):
+for ii in range(len(mass_freq)):
     # ax.plot(bin_centers,mass_freq[ii][0],color='silver')
-    # ax.fill_between(bin_centers,max_lim,min_lim,color='silver',alpha=0.1)
+    ax.fill_between(bin_centers,max_lim,min_lim,color='silver',alpha=0.1)
 ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='deeppink',\
-            linewidth=2,label='ECO',drawstyle='steps-mid')
+            linewidth=2,label='ECO')
 ax.legend(loc='best',fontsize=va.size_legend)
 
 plt.subplots_adjust(left=0.15, bottom=0.15, right=0.85, top=0.93,\
@@ -1773,16 +1780,16 @@ def hist_nn_dist(distance,neigh_val,ax,mass_bins,mass):
     # plt.show()
 
 # fig, ax = plt.subplots(nrows=2,ncols=3,sharey=True)
-fig, ax = plt.subplots()
-# axes_flat = ax.flatten()
+# fig, ax = plt.subplots()
+# # axes_flat = ax.flatten()
 
-# zz = 0
-# while zz <= 4:
-#     for ii in range(len(nn_mass_dist)):
-#         for kk in range(len(nn_mass_dist)-2):
-#             hist_nn_dist(nn_mass_dist[ii].T,(kk+1),axes_flat[kk])
-#     zz += 1
-for ii in range(len(nn_mass_dist)):
-    hist_nn_dist(nn_mass_dist[ii].T,1,ax,bins,nn_mass_dist[ii].T[0])
+# # zz = 0
+# # while zz <= 4:
+# #     for ii in range(len(nn_mass_dist)):
+# #         for kk in range(len(nn_mass_dist)-2):
+# #             hist_nn_dist(nn_mass_dist[ii].T,(kk+1),axes_flat[kk])
+# #     zz += 1
+# for ii in range(len(nn_mass_dist)):
+#     hist_nn_dist(nn_mass_dist[ii].T,1,ax,bins,nn_mass_dist[ii].T[0])
         
-plt.show()
+# plt.show()

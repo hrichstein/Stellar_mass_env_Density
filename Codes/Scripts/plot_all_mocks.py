@@ -794,8 +794,9 @@ def plot_eco_meds(bin_centers,y_vals,low_lim,up_lim,ax,plot_idx,only=False):
                 verticalalignment='top',transform=ax.transAxes,fontsize=18)
         if plot_idx == 4:
             ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=18)
-    ax.errorbar(bin_centers,y_vals,yerr=0.1,lolims=low_lim,\
-        uplims=up_lim,color='dodgerblue',label='ECO')
+    ytop = np.array(up_lim-y_vals)
+    ybot = np.array(y_vals-low_lim)
+    ax.errorbar(bin_centers,y_vals,yerr=(ybot,ytop),color='darkmagenta',label='ECO')
     # if plot_idx == 5:
     #     ax.legend(loc='best')
 
@@ -864,10 +865,11 @@ def plot_med_range(bin_centers,low_lim,up_lim,ax,alpha,color='gray'):
 ##############################################################################
 
 dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
-dirpath += r"\Catalogs\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_"
-dirpath += r"scatter_mocks\Resolve_plk_5001_so_mvir_scatter0p1_ECO_Mocks"
+dirpath += r"\Catalogs\Beta_M1_Behroozi"
+dirpath += r"\ab_matching"
+dirpath += r"\Resolve_plk_5001_so_mvir_hod1_scatter0p2_mock1_ECO_Mocks"
 
-usecols  = (0,1,8,13)
+usecols  = (0,1,2,13)
 dlogM    = 0.2
 
 ##############################################################################
@@ -881,10 +883,19 @@ PD       = [(pd.read_csv(ECO_cats[ii],sep="\s+", usecols= usecols,header=None,\
                    skiprows=2,names=names)) for ii in range(len(ECO_cats))]
 PD_comp  = [(PD[ii][PD[ii].logMstar >= 9.1]) for ii in range(len(ECO_cats))]
 
+PD = [[] for ii in range(len(ECO_cats))]
 
-# PD_test  = [(PD[ii][PD[ii].logMstar >= 11.7]) for ii in range(len(ECO_cats))]
-# for ii in range(len(PD_test)):
-#     print len(PD_test[ii])
+for ii in range(len(ECO_cats)):
+    temp_PD = (pd.read_csv(ECO_cats[ii],sep="\s+", usecols= usecols,\
+        header=None,skiprows=2,names=names))
+    PD[ii] = temp_PD
+
+PD_comp_1  = [(PD[ii][PD[ii].logMstar >= 9.1]) for ii in range(len(ECO_cats))]
+PD_comp  = [(PD_comp_1[ii][PD_comp_1[ii].logMstar <=11.77]) \
+for ii in range(len(ECO_cats))]
+
+[(PD_comp[ii].reset_index(drop=True,inplace=True)) \
+for ii in range(len(ECO_cats))]
 
 min_max_mass_arr = []
 

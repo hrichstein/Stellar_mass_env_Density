@@ -201,7 +201,7 @@ def plot_every_rat(bin_cens,upper,lower,ax,plot_idx,neigh_val,eco_bins,\
         ax.text(0.05, 0.05, title,horizontalalignment='left',\
                     verticalalignment='bottom',transform=ax.transAxes,\
                     fontsize=va.size_text)
-    if plot_idx     ==2:
+    # if plot_idx     ==2:
         if neigh_val == 5:
             ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=va.size_xlabel)
         if neigh_val == 1:
@@ -232,7 +232,7 @@ dict_to_zz  = {1:0,5:1,20:2}
 
 neigh_vals = np.array([1,5,20])
 
-fig,axes = plt.subplots(nrows=nrow_num,ncols=ncol_num,figsize=(14,4),\
+fig, axes = plt.subplots(nrows=nrow_num,ncols=ncol_num,figsize=(14,4),\
     sharey=True)
 
 # figure_title = fig.suptitle\
@@ -242,38 +242,70 @@ fig,axes = plt.subplots(nrows=nrow_num,ncols=ncol_num,figsize=(14,4),\
 # figure_title.set_y(1.0)
 # fig.subplots_adjust(bottom=0.17, right=0.99, left=0.03,top=0.94, hspace=0, wspace=0)
 
+scatter_dict_params = {1:['darkorchid','0.1 dex', 0.5],
+                       2:['royalblue','0.2 dex', 0.4],
+                       3:['violet','0.3 dex', 0.4]}
 axes_flat= axes.flatten()
+zz = int(0)
+for yy in range(2,3):
+    for xx in neigh_vals:
+        upper = all_rat_dict[yy][xx][0]
+        lower = all_rat_dict[yy][xx][1]
+        if xx == 1:
+            ax_as = axes_flat[0]
+        if xx == 5:
+            ax_as = axes_flat[1]
+        if xx == 20:
+            ax_as = axes_flat[2]
+        # Color parameters
+        color, label, alpha = scatter_dict_params[yy]
+        # if yy == 1:
+        #     color = 'lightpink'
+        #     label = '0.1 dex'
+        #     alpha =  0.5
+        # if yy ==2:
+        #     color = 'royalblue'
+        #     label = '0.2 dex'
+        #     # label=None
+        #     alpha =  0.4
+        # if yy ==3:
+        #     color = 'violet'
+        #     label = '0.3 dex'
+        #     alpha =  0.4
+        plot_every_rat(bin_centers[:-1],upper,lower,ax_as,yy,xx,\
+            eco_bins[xx],eco_ratio[xx],eco_rat_err[xx],\
+            color=color,label=label,alpha=alpha)
 
-zz       = int(0)
-while zz == 0:
-    for yy in range(2,3):
-        for xx in neigh_vals:
-            upper = all_rat_dict[yy][xx][0]
-            lower = all_rat_dict[yy][xx][1]
-            if xx == 1:
-                ax_as = axes_flat[0]
-            if xx == 5:
-                ax_as = axes_flat[1]
-            if xx == 20:
-                ax_as = axes_flat[2]
-            if yy == 1:
-                color = 'lightpink'
-                label = '0.1 dex'
-                alpha =  0.5
-            if yy ==2:
-                color = 'royalblue'
-                label = '0.2 dex'
-                # label=None
-                alpha =  0.4
-            if yy ==3:
-                color = 'violet'
-                label = '0.3 dex'
-                alpha =  0.4
-            plot_every_rat(bin_centers[:-1],upper,lower,ax_as,yy,xx,\
-                eco_bins[xx],eco_ratio[xx],eco_rat_err[xx],\
-                color=color,label=label,alpha=alpha)
+# zz       = int(0)
+# while zz == 0:
+#     for yy in range(2,3):
+#         for xx in neigh_vals:
+#             upper = all_rat_dict[yy][xx][0]
+#             lower = all_rat_dict[yy][xx][1]
+#             if xx == 1:
+#                 ax_as = axes_flat[0]
+#             if xx == 5:
+#                 ax_as = axes_flat[1]
+#             if xx == 20:
+#                 ax_as = axes_flat[2]
+#             if yy == 1:
+#                 color = 'lightpink'
+#                 label = '0.1 dex'
+#                 alpha =  0.5
+#             if yy ==2:
+#                 color = 'royalblue'
+#                 label = '0.2 dex'
+#                 # label=None
+#                 alpha =  0.4
+#             if yy ==3:
+#                 color = 'violet'
+#                 label = '0.3 dex'
+#                 alpha =  0.4
+#             plot_every_rat(bin_centers[:-1],upper,lower,ax_as,yy,xx,\
+#                 eco_bins[xx],eco_ratio[xx],eco_rat_err[xx],\
+#                 color=color,label=label,alpha=alpha)
 
-    zz+=1
+#     zz+=1
 
 # plt.tight_layout()
 # plt.subplots_adjust(top=0.93,bottom=0.21,left=0.11,right=0.99,hspace=0.20,wspace=0.)
@@ -294,17 +326,7 @@ def plot_every_med(bin_cens,upper,lower,ax,plot_idx,\
     ax.set_yticks(np.arange(0,12,1))  
     ax.set_yticklabels(np.arange(1,10,4))
     ax.fill_between(bin_cens,upper,lower,color=color,alpha=alpha,label=label)
-    title = r"\boldmath$N=%d$"%(neigh_val)
-    if plot_idx  ==3:
-        ax.text(0.05, 0.05, title,horizontalalignment='left',\
-                    verticalalignment='bottom',transform=ax.transAxes,\
-                    fontsize=va.size_text)
-        if neigh_val == 1:
-            label_eco = 'ECO'
-        else:
-            label_eco = None
-        if neigh_val == 5:
-            ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=va.size_xlabel)
+    title = r"\boldmath$N=%d$"%(neigh_val)        
     ybot = np.array(eco_vals[0] - eco_vals[1])            
     ytop = np.array(eco_vals[2] - eco_vals[0])            
     ax.errorbar(bin_cens,eco_vals[0],yerr=(ybot,ytop),\
@@ -313,8 +335,16 @@ def plot_every_med(bin_cens,upper,lower,ax,plot_idx,\
         ax.set_ylabel(r'$D_{N}\ \textnormal{(Mpc)}$',fontsize = \
             va.size_ylabel)
     if plot_idx == 3:
+        ax.text(0.05, 0.05, title,horizontalalignment='left',\
+                    verticalalignment='bottom',transform=ax.transAxes,\
+                    fontsize=va.size_text)
         if neigh_val == 1:
             ax.legend(loc='upper left',numpoints=1,fontsize=va.size_legend)
+            label_eco = 'ECO'
+        else:
+            label_eco = None
+        if neigh_val == 5:
+            ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=va.size_xlabel)
 
 
 ###############################################################################
@@ -334,35 +364,54 @@ fig,axes = plt.subplots(nrows=nrow_num,ncols=ncol_num,figsize=(14,4),\
 # fig.subplots_adjust(bottom=0.17, right=0.99, left=0.06,top=0.94, hspace=0, wspace=0)
 
 axes_flat= axes.flatten()
-zz       = int(0)
-while zz == 0:
-    # for yy in all_meds_dict:
-    for yy in ([1,3]):
-        for xx in neigh_vals:
-            upper = all_meds_dict[yy][xx][0]
-            lower = all_meds_dict[yy][xx][1]
-            if xx == 1:
-                ax_as = axes_flat[0]
-            if xx == 5:
-                ax_as = axes_flat[1]
-            if xx == 20:
-                ax_as = axes_flat[2]
-            if yy == 1:
-                color = 'darkviolet'
-                label = '0.1 dex'
-                alpha =  0.5
-            if yy == 2:
-                color = 'royalblue'
-                label = '0.2 dex'
-                alpha =  0.3
-            if yy == 3:
-                color = 'springgreen'
-                label = '0.3 dex'
-                alpha =  0.5
-            plot_every_med(bin_centers[:-1],upper,lower,ax_as,yy,\
-                eco_meds[xx],xx,color=color,label=label,alpha=alpha)
 
-    zz+=1
+# for yy in all_meds_dict:
+for yy in ([1,3]):
+    color, label, alpha = scatter_dict_params[yy]
+    for xx in neigh_vals:
+        upper = all_meds_dict[yy][xx][0]
+        lower = all_meds_dict[yy][xx][1]
+        if xx == 1:
+            ax_as = axes_flat[0]
+        if xx == 5:
+            ax_as = axes_flat[1]
+        if xx == 20:
+            ax_as = axes_flat[2]
+        plot_every_med(bin_centers[:-1],upper,lower,ax_as,yy,\
+            eco_meds[xx],xx,color=color,label=label,alpha=alpha)
+
+
+
+
+# zz       = int(0)
+# while zz == 0:
+#     # for yy in all_meds_dict:
+#     for yy in ([1,3]):
+#         for xx in neigh_vals:
+#             upper = all_meds_dict[yy][xx][0]
+#             lower = all_meds_dict[yy][xx][1]
+#             if xx == 1:
+#                 ax_as = axes_flat[0]
+#             if xx == 5:
+#                 ax_as = axes_flat[1]
+#             if xx == 20:
+#                 ax_as = axes_flat[2]
+#             if yy == 1:
+#                 color = 'darkviolet'
+#                 label = '0.1 dex'
+#                 alpha =  0.5
+#             if yy == 2:
+#                 color = 'royalblue'
+#                 label = '0.2 dex'
+#                 alpha =  0.3
+#             if yy == 3:
+#                 color = 'springgreen'
+#                 label = '0.3 dex'
+#                 alpha =  0.5
+#             plot_every_med(bin_centers[:-1],upper,lower,ax_as,yy,\
+#                 eco_meds[xx],xx,color=color,label=label,alpha=alpha)
+
+#     zz+=1
 
 plt.subplots_adjust(top=0.93,bottom=0.21,left=0.06,right=0.99,hspace=0.20,\
     wspace=0)    
@@ -422,24 +471,40 @@ fig,axes = plt.subplots(nrows=nrow_num,ncols=ncol_num,figsize=(14,4),\
 
 axes_flat = axes.flatten()
 
-text = False
-zz = int(0)
-while zz ==0:
-    for xx in neigh_vals:
-        text = False
-        if xx == 1:
-            ax_as = axes_flat[0]
-        if xx == 5:
-            ax_as = axes_flat[1]
-        if xx == 20:
-            ax_as = axes_flat[2]
-        plot_eco_hists(eco_high_bins[xx],eco_low_bins[xx],\
-            eco_high_counts[xx][0],eco_low_counts[xx][0],\
-            eco_high_counts[xx][1],eco_low_counts[xx][1],\
-            ax_as,bin_centers[:-1],hists_dict_high[xx][0],\
-            hists_dict_high[xx][1],hists_dict_low[xx][0],\
-            hists_dict_low[xx][1],xx)  
-    zz+=1          
 
-plt.subplots_adjust(top=0.93,bottom=0.21,left=0.11,right=0.99,hspace=0.20,wspace=0)
+for xx in neigh_vals:
+    if xx == 1:
+        ax_as = axes_flat[0]
+    if xx == 5:
+        ax_as = axes_flat[1]
+    if xx == 20:
+        ax_as = axes_flat[2]
+    plot_eco_hists(eco_high_bins[xx],eco_low_bins[xx],\
+        eco_high_counts[xx][0],eco_low_counts[xx][0],\
+        eco_high_counts[xx][1],eco_low_counts[xx][1],\
+        ax_as,bin_centers[:-1],hists_dict_high[xx][0],\
+        hists_dict_high[xx][1],hists_dict_low[xx][0],\
+        hists_dict_low[xx][1],xx)
+
+
+
+# zz = int(0)
+# while zz ==0:
+#     for xx in neigh_vals:
+#         if xx == 1:
+#             ax_as = axes_flat[0]
+#         if xx == 5:
+#             ax_as = axes_flat[1]
+#         if xx == 20:
+#             ax_as = axes_flat[2]
+#         plot_eco_hists(eco_high_bins[xx],eco_low_bins[xx],\
+#             eco_high_counts[xx][0],eco_low_counts[xx][0],\
+#             eco_high_counts[xx][1],eco_low_counts[xx][1],\
+#             ax_as,bin_centers[:-1],hists_dict_high[xx][0],\
+#             hists_dict_high[xx][1],hists_dict_low[xx][0],\
+#             hists_dict_low[xx][1],xx)  
+#     zz+=1          
+
+plt.subplots_adjust(top=0.93,bottom=0.21,left=0.11,right=0.99,hspace=0.20,
+    wspace=0)
 plt.show()

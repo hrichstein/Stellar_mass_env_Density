@@ -1,0 +1,87 @@
+from __future__ import division, absolute_import
+
+from matplotlib import rc,rcParams
+rc('text', usetex=True)
+rc('axes', linewidth=2)
+rc('font', weight='bold')
+# rcParams['text.latex.preamble'] = [r'\usepackage{sfmath} \boldmath']
+
+import astropy.stats
+import cPickle as pickle
+import glob
+import math
+import matplotlib.pyplot as plt 
+from matplotlib import ticker
+from matplotlib.ticker import FormatStrFormatter
+import numpy as np 
+import os
+import pandas as pd
+from scipy import integrate,optimize,spatial
+
+###############################################################################
+
+pickle_in = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_Density"
+pickle_in+= r"\Pickle_output"
+
+###############################################################################
+
+
+pickle_in_mock_smf = pickle_in
+pickle_in_mock_smf+=r"\mock_smfs.p"
+
+mock_smf_vals = pickle.load(open(pickle_in_mock_smf,"rb"))
+
+pickle_in_eco_smf = pickle_in
+pickle_in_eco_smf+=r"\eco_smf.p"
+
+eco_smf_vals = pickle.load(open(pickle_in_eco_smf,"rb"))
+
+eco_smf_raw = eco_smf_vals[0][0]
+eco_smf_sigma = eco_smf_vals[0][1]
+
+orig_mock = mock_smf_vals[0]
+m1_mock   = mock_smf_vals[1]
+beta_mock = mock_smf_vals[2]
+
+mean_smf_val = {}
+
+# for jj in range(len(halo_frac)):
+#     bin_str = '{0}'.format(ii)
+#     oo_arr = halo_frac[jj][ii]
+#     n_o_elem = len(oo_arr)
+#     if jj == 0:
+#         oo_tot = np.zeros((n_o_elem,1))
+#     oo_tot = np.insert(oo_tot,len(oo_tot.T),oo_arr,1)
+# oo_tot = np.array(np.delete(oo_tot,0,axis=1))
+# oo_tot_mean = [np.nanmean(oo_tot[uu]) for uu in xrange(len(oo_tot))]
+
+for aa in range(len(orig_mock)):
+    bb_arr = orig_mock[aa][0]
+    ee_arr = m1_mock[aa][0]
+    ff_arr = beta_mock[aa][0]
+    n_elem = len(bb_arr)
+    if aa == 0:
+        cc_tot = np.zeros((n_elem,1))
+        gg_tot = np.zeros((n_elem,1))
+        hh_tot = np.zeros((n_elem,1))        
+    cc_tot = np.insert(cc_tot,len(cc_tot.T),bb_arr,1)
+    gg_tot = np.insert(gg_tot,len(gg_tot.T),ee_arr,1)
+    hh_tot = np.insert(hh_tot,len(hh_tot.T),ff_arr,1)
+cc_tot = np.array(np.delete(cc_tot,0,axis=1))
+gg_tot = np.array(np.delete(gg_tot,0,axis=1))
+hh_tot = np.array(np.delete(hh_tot,0,axis=1))
+cc_tot_mean = [np.nanmean(cc_tot[dd]) for dd in xrange(len(cc_tot))]
+gg_tot_mean = [np.nanmean(gg_tot[dd]) for dd in xrange(len(gg_tot))]
+hh_tot_mean = [np.nanmean(hh_tot[dd]) for dd in xrange(len(hh_tot))]
+
+def chi_square(obs,exp,sigma):
+    chi_sum = []
+    for ii in range(len(obs)):
+        print (obs[ii]-exp[ii])**2/sigma[ii]
+        chi_sum.append((obs[ii]-exp[ii])**2/sigma[ii])
+    return np.sum(chi_sum)
+
+obs_arr = [cc_tot_mean,gg_tot_mean,hh_tot_mean]
+chi_arr = [[] for hh in range(len(obs_arr))]
+for jj in range(len(obs_arr)):
+    chi_arr[jj] = chi_square(obs_arr[jj],eco_smf_raw,eco_smf_sigma)

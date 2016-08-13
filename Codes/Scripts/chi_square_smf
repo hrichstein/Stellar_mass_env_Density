@@ -18,6 +18,16 @@ import os
 import pandas as pd
 from scipy import integrate,optimize,spatial
 
+class Vars(object):
+    size_xlabel = 22
+    size_ylabel = 22
+    size_text   = 18
+    size_tick   = 16
+    size_title  = 24
+    size_legend = 16
+
+va = Vars()
+
 ###############################################################################
 
 pickle_in = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_Density"
@@ -45,43 +55,85 @@ beta_mock = mock_smf_vals[2]
 
 mean_smf_val = {}
 
-# for jj in range(len(halo_frac)):
-#     bin_str = '{0}'.format(ii)
-#     oo_arr = halo_frac[jj][ii]
-#     n_o_elem = len(oo_arr)
-#     if jj == 0:
-#         oo_tot = np.zeros((n_o_elem,1))
-#     oo_tot = np.insert(oo_tot,len(oo_tot.T),oo_arr,1)
-# oo_tot = np.array(np.delete(oo_tot,0,axis=1))
-# oo_tot_mean = [np.nanmean(oo_tot[uu]) for uu in xrange(len(oo_tot))]
+##I should really make a function
 
 for aa in range(len(orig_mock)):
-    bb_arr = orig_mock[aa][0]
-    ee_arr = m1_mock[aa][0]
-    ff_arr = beta_mock[aa][0]
-    n_elem = len(bb_arr)
+    orig_arr = orig_mock[aa][0]
+    m1_arr = m1_mock[aa][0]
+    beta_arr = beta_mock[aa][0]
+    n_elem = len(orig_arr)
     if aa == 0:
-        cc_tot = np.zeros((n_elem,1))
-        gg_tot = np.zeros((n_elem,1))
-        hh_tot = np.zeros((n_elem,1))        
-    cc_tot = np.insert(cc_tot,len(cc_tot.T),bb_arr,1)
-    gg_tot = np.insert(gg_tot,len(gg_tot.T),ee_arr,1)
-    hh_tot = np.insert(hh_tot,len(hh_tot.T),ff_arr,1)
-cc_tot = np.array(np.delete(cc_tot,0,axis=1))
-gg_tot = np.array(np.delete(gg_tot,0,axis=1))
-hh_tot = np.array(np.delete(hh_tot,0,axis=1))
-cc_tot_mean = [np.nanmean(cc_tot[dd]) for dd in xrange(len(cc_tot))]
-gg_tot_mean = [np.nanmean(gg_tot[dd]) for dd in xrange(len(gg_tot))]
-hh_tot_mean = [np.nanmean(hh_tot[dd]) for dd in xrange(len(hh_tot))]
+        orig_tot = np.zeros((n_elem,1))
+        m1_tot = np.zeros((n_elem,1))
+        beta_tot = np.zeros((n_elem,1))        
+    orig_tot = np.insert(orig_tot,len(orig_tot.T),orig_arr,1)
+    m1_tot = np.insert(m1_tot,len(m1_tot.T),m1_arr,1)
+    beta_tot = np.insert(beta_tot,len(beta_tot.T),beta_arr,1)
+orig_tot = np.array(np.delete(orig_tot,0,axis=1))
+m1_tot = np.array(np.delete(m1_tot,0,axis=1))
+beta_tot = np.array(np.delete(beta_tot,0,axis=1))
+
+orig_tot_mean = [np.nanmean(orig_tot[dd]) for dd in xrange(len(orig_tot))]
+orig_max      = [np.nanmax(orig_tot[dd]) for dd in xrange(len(orig_tot))]
+orig_min      = [np.nanmin(orig_tot[dd]) for dd in xrange(len(orig_tot))]
+
+m1_tot_mean = [np.nanmean(m1_tot[dd]) for dd in xrange(len(m1_tot))]
+m1_max = [np.nanmax(m1_tot[dd]) for dd in xrange(len(m1_tot))]
+m1_min = [np.nanmin(m1_tot[dd]) for dd in xrange(len(m1_tot))]
+
+beta_tot_mean = [np.nanmean(beta_tot[dd]) for dd in xrange(len(beta_tot))]
+beta_max = [np.nanmax(beta_tot[dd]) for dd in xrange(len(beta_tot))]
+beta_min = [np.nanmin(beta_tot[dd]) for dd in xrange(len(beta_tot))]
+
+max_mock_arr = [orig_max,m1_max,beta_max]
+min_mock_arr = [orig_min,m1_min,beta_min]
+
+
 
 def chi_square(obs,exp,sigma):
     chi_sum = []
     for ii in range(len(obs)):
-        print (obs[ii]-exp[ii])**2/sigma[ii]
+        # print (obs[ii]-exp[ii])**2/sigma[ii]
         chi_sum.append((obs[ii]-exp[ii])**2/sigma[ii])
     return np.sum(chi_sum)
 
-obs_arr = [cc_tot_mean,gg_tot_mean,hh_tot_mean]
-chi_arr = [[] for hh in range(len(obs_arr))]
+obs_arr = [orig_tot_mean,m1_tot_mean,beta_tot_mean]
+chi_arr = [[] for beta in range(len(obs_arr))]
 for jj in range(len(obs_arr)):
     chi_arr[jj] = chi_square(obs_arr[jj],eco_smf_raw,eco_smf_sigma)
+
+bins = np.linspace(9.1,11.7,14)
+bin_centers= 0.5*(bins[:-1]+bins[1:])
+
+def mean_smfs(bin_centers,mean_vals,ax,error=False,err_vals=None,label=None,
+    color='midnightblue'):
+    ax.set_xlim(9.1,11.7)
+    ax.set_yscale('log')
+    ax.set_xlabel(r'$\log\ M_{*}/M_{\odot}$',fontsize=va.size_xlabel)
+    ax.set_ylabel(r'$\log\ \left(\frac{\textnormal{N}_{gal/bin}}{\textnormal{N}_{total}\ * \ dlogM}\right)$',fontsize=va.size_xlabel)
+    ax.set_title(r'Stellar Mass Function',fontsize=va.size_title)
+    ax.tick_params(axis='both', labelsize=va.size_tick)
+    if error == True:
+        ax.errorbar(bin_centers,mean_vals,err_vals,label=label,color=color,linewidth=2)
+    else:
+        ax.plot(bin_centers,mean_vals,label=label,color=color)
+    ax.legend(loc='best')
+
+fig, ax = plt.subplots(figsize=(12,12))
+# color_dict = {0:'deepskyblue',1:'darkmagenta',2:'seagreen'}
+color_dict = {0:'orangered',1:'green',2:'purple'}
+
+for jj in range(len(obs_arr)):
+    if jj == 0:
+        label = 'Original'
+    elif jj == 1:
+        label = 'M1 Change'
+    elif jj ==2:
+        label = 'Beta Change'
+    mean_smfs(bin_centers,obs_arr[jj],ax,label=label,color=color_dict[jj])
+    # ax.fill_between(bin_centers,max_mock_arr[jj],min_mock_arr[jj],
+    #     color=color_dict[jj],alpha=0.3)
+mean_smfs(bin_centers,eco_smf_raw,ax,error=True,err_vals=eco_smf_sigma,
+    label='ECO')
+
+plt.show()

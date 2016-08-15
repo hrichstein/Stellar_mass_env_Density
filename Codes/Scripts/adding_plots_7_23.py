@@ -1725,9 +1725,24 @@ def schech_integral(edge_1,edge_2,phi_star,alpha,Mstar):
     return bin_integral
  
  
-def schech_step_3(xdata,phi_star,alpha,Mstar):
+def schech_step_3(bin_edges,phi_star,alpha,Mstar):
     test_int = []
-    for ii in range(len(xdata)):
-        test_int.append((schech_integral(10**bins_curve_fit[ii],\
-             10**bins_curve_fit[ii+1],phi_star,alpha,Mstar)))
+    for ii in range(len(bin_edges)-1):
+        test_int.append((schech_integral(10**bin_edges[ii],\
+             10**bin_edges[ii+1],phi_star,alpha,Mstar)))
     return test_int
+
+def find_params(bin_int,bin_edges,count_err):
+
+    p0    = (1.5,-1.05,10**10.64)
+    opt_v,est_cov = optimize.curve_fit(schech_step_3,bin_edges,\
+                            bin_int,p0=p0,sigma=count_err,check_finite=True)
+    alpha   = opt_v[1]
+    log_m_star    = np.log10(opt_v[2])
+    
+    res_arr = np.array([alpha,log_m_star])
+    
+    perr = np.sqrt(np.diag(est_cov))
+
+    return opt_v, res_arr, perr
+

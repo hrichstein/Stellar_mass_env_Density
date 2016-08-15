@@ -185,7 +185,7 @@ def sph_to_cart(ra,dec,cz,h):
 
     return coords
 
-############################################################################
+###############################################################################
 
 def calc_dens(n_val,r_val):
     """
@@ -535,6 +535,23 @@ def mean_bin_mass(mass_dist,bins,kk):
 
     return mean_mass 
 
+def plot_halo_frac(bin_centers,y_vals,ax,plot_idx,text=False):
+    titles = [1,2,3,5,10,20]
+    ax.set_xlim(9.1,11.9)
+    ax.set_xticks(np.arange(9.5,12.,0.5)) 
+    ax.tick_params(axis='x', which='major', labelsize=16)
+    if text == True:
+        title_here = 'n = {0}'.format(titles[plot_idx])
+        ax.text(0.05, 0.95, title_here,horizontalalignment='left',            \
+            verticalalignment='top',transform=ax.transAxes,fontsize=18)
+    if plot_idx == 4:
+        ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=20)
+    ax.plot(bin_centers,y_vals,color='silver')
+    
+def plot_mean_halo_frac(bin_centers,mean_vals,ax,std):
+    ax.errorbar(bin_centers,mean_vals,yerr=std,color='darkmagenta')    
+
+###############################################################################
 
 dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
 dirpath += r"\Catalogs\Beta_M1_Behroozi"
@@ -545,11 +562,6 @@ dirpath += r"\Resolve_plk_5001_so_mvir_hod1_scatter0p2_mock1_ECO_Mocks"
 # dirpath += r"\Stellar_mass_env_density\Catalogs"
 # dirpath += r"\Resolve_plk_5001_so_mvir_scatter_ECO_Mocks_scatter_mocks"
 # dirpath += r"\Resolve_plk_5001_so_mvir_scatter0p1_ECO_Mocks"
-
-# dirpath  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
-# dirpath += r"\Stellar_mass_env_Density\Catalogs"
-# dirpath += r"\RESOLVE_ECO_Mocks_M1_Beta_new_mocks"
-# dirpath += r"\Resolve_plk_5001_so_mvir_hod1_scatter0p2_mock2_ECO_Mocks"
 
 # figsave_path = r"C:\Users\Hannah\Desktop\Vanderbilt_REU"
 # figsave_path+= r"\Stellar_mass_env_Density\Plots"
@@ -645,6 +657,8 @@ nn_mass_dist   = np.array([(np.column_stack((mass_arr[qq],nn_specs[qq])))\
 nn_neigh_idx      = np.array([(np.array(nn_idx).T[ii].T[neigh_vals].T) \
                     for ii in range(len(coords_test))])
 
+###############################################################################
+
 truth_vals = {}
 for ii in range(len(halo_id_arr)):
     truth_vals[ii] = {}
@@ -697,34 +711,7 @@ for ii in neigh_vals:
     for uu in xrange(len(oo_tot))]
     mean_mock_halo_frac[bin_str] = np.array([oo_tot_mean,oo_tot_std])
 
-# temp_sav_list = []
-# for ii in neigh_vals:
-#     bin_str = '{0}'.format(ii)
-#     temp_sav_list.append(mean_mock_halo_frac[bin_str])
-# sav_array = np.array(temp_sav_list)
-# txt_file_name = "{0}_mean_mock_halo_frac.txt".format(dec_spec)
-# np.savetxt(txt_file_name,sav_array,fmt='%.8f')
-
-
-def plot_halo_frac(bin_centers,y_vals,ax,plot_idx,text=False):
-    titles = [1,2,3,5,10,20]
-    ax.set_xlim(9.1,11.9)
-    ax.set_xticks(np.arange(9.5,12.,0.5)) 
-    ax.tick_params(axis='x', which='major', labelsize=16)
-    if text == True:
-        title_here = 'n = {0}'.format(titles[plot_idx])
-        ax.text(0.05, 0.95, title_here,horizontalalignment='left',            \
-            verticalalignment='top',transform=ax.transAxes,fontsize=18)
-    if plot_idx == 4:
-        ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=20)
-    ax.plot(bin_centers,y_vals,color='silver')
-    
-def plot_mean_halo_frac(bin_centers,mean_vals,ax,std):
-    ax.errorbar(bin_centers,mean_vals,yerr=std,color='darkmagenta')
-
-
-
-# In[56]:
+###############################################################################    
 
 nrow = int(2)
 ncol = int(3)
@@ -839,23 +826,37 @@ bins_curve_fit = bins.copy()
 
 # In[281]:
 
+# eco_path  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
+# eco_path += r"\Catalogs\ECO_true"
+# eco_cols  = np.array([0,1,2,4])
+
 eco_path  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
 eco_path += r"\Catalogs\ECO_true"
-eco_cols  = np.array([0,1,2,4])
+
+##ra, dec,cz,absrmag,logMstar,group identifier,fc (cent/sat),logMh (halo)
+##2: logmh, 4:dec, 10:fc, 15: group, 16: absrmag, 19:cz. 20:ra, 21: logmstar
+
+
+eco_cols  = np.array([2,4,10,15,16,19,20,21])
 
 
 # In[282]:
 
-ECO_true = (Index(eco_path,'.txt'))
-names    = ['ra','dec','cz','logMstar']
-PD_eco   = pd.read_csv(ECO_true[0],sep="\s+", usecols=(eco_cols),header=None, \
+# ECO_true = (Index(eco_path,'.txt'))
+ECO_true = (Index(eco_path,'.csv'))
+names    = ['logMhalo','dec','cent_sat','group_ID','Mr','cz','ra','logMstar']
+PD_eco   = pd.read_csv(ECO_true[0], usecols=(eco_cols),header=None, \
                skiprows=1,names=names)
 eco_comp = PD_eco[PD_eco.logMstar >= 9.1]
 
-ra_eco   = (np.array(eco_comp)).T[0]
-dec_eco  = (np.array(eco_comp)).T[1] 
-cz_eco   = (np.array(eco_comp)).T[2] 
-mass_eco = (np.array(eco_comp)).T[3]
+ra_eco   = eco_comp.ra
+dec_eco  = eco_comp.dec
+cz_eco   = eco_comp.cz
+mass_eco = eco_comp.logMstar
+logMhalo = eco_comp.logMhalo
+cent_sat = eco_comp.cent_sat
+group_ID = eco_comp.group_ID
+Mr_eco   = eco_comp.Mr
 
 coords_eco        = sph_to_cart(ra_eco,dec_eco,cz_eco,70)
 eco_neighbor_tree = spatial.cKDTree(coords_eco)
@@ -1006,106 +1007,7 @@ eco_low[1]
 
 # In[289]:
 
-def perc_calcs(mass,bins,dlogM):
-    mass_counts, edges = np.histogram(mass,bins)
-    mass_freq          = mass_counts/float(len(mass))/dlogM
-    
-    bin_centers        = 0.5*(edges[:-1]+edges[1:])
-    
-    non_zero = (mass_freq!=0)
-    
-    mass_freq_1 = mass_freq[non_zero]
-    
-    smf_err            = np.sqrt(mass_counts)/float(len(mass))/dlogM
-    
-    smf_err_1   = smf_err[non_zero] 
-    
-    bin_centers_1 = bin_centers[non_zero]
 
-    return mass_freq_1, smf_err_1, bin_centers_1
-
-
-# In[290]:
-
-def quartiles(mass):
-    dec_val     =  int(len(mass)/4)
-    res_list      =  [[] for bb in range(4)]
-
-    for aa in range(0,4):
-        if aa == 3:
-            res_list[aa] = mass[aa*dec_val:]
-        else:
-            res_list[aa] = mass[aa*dec_val:(aa+1)*dec_val]
-
-    return res_list
-
-
-# In[291]:
-
-def deciles(mass):
-    dec_val     =  int(len(mass)/10)
-    res_list      =  [[] for bb in range(10)]
-
-    for aa in range(0,10):
-        if aa == 9:
-            res_list[aa] = mass[aa*dec_val:]
-        else:
-            res_list[aa] = mass[aa*dec_val:(aa+1)*dec_val]
-
-    return res_list
-
-
-# In[412]:
-
-def mean_perc_mass(mass,bins):
-    """
-    Returns mean mass of galaxies in each bin
-
-    Parameters
-    ----------
-    mass_dist: array-like
-        An array with mass values in at index 0 (when transformed) 
-    bins: array=like
-        A 1D array with the values which will be used as the bin edges     
-
-    Returns
-    -------
-
-    """
-    edges        = bins
-
-    digitized    = np.digitize(mass,edges)
-    digitized   -= int(1)
-    
-    bin_nums          = np.unique(digitized)
-    
-    for ii in bin_nums:
-        if len(mass[digitized==ii]) == 0:
-            mass[digitized==ii] = np.nan
-
-
-
-    mean_mass = np.array([np.nanmean(mass[digitized==ii])\
-                    for ii in bin_nums])
-
-    return mean_mass 
-
-
-eco_dec = {}
-for cc in range(len(eco_mass_dat)):
-    eco_dec[neigh_vals[cc]] = deciles(eco_mass_dat[cc])
-    
-eco_dec_smf = {}
-eco_dec_err = {}
-eco_dec_bin = {}
-
-for ss in neigh_vals:
-    eco_dec_smf[ss] = {}
-    eco_dec_err[ss] = {}
-    eco_dec_bin[ss] = {}
-    for tt in range(len(eco_dec[ss])):
-        eco_dec_smf[ss][tt], eco_dec_err[ss][tt], eco_dec_bin[ss][tt] = \
-        perc_calcs(eco_dec[ss][tt],bins,dlogM)    
 
 # # Stellar Mass Function
 
@@ -1136,137 +1038,7 @@ plt.subplots_adjust(left=0.15, bottom=0.15, right=0.85, top=0.93,\
 plt.show()
 
 
-# # The Mess I am unlovingly referring to as Schechter Functions
 
-# In[432]:
-
-def schechter_real_func(mean_of_mass_bin,phi_star,alpha,Mstar):
-    """
-    
-    mean_of_mass_bin: array-like
-        Unlogged x-values
-    phi-star: float-like
-        Normalization value
-    alpha: float-like
-        Low-mass end slope
-    Mstar: float-like
-        Unlogged value where function switches from power-law to exponential
-    
-    """
-#     M_over_mstar = (10**mean_of_mass_bin)/Mstar
-    M_over_mstar = (mean_of_mass_bin)/Mstar
-    res_arr    = (phi_star) * (M_over_mstar**(alpha)) *\
-                             np.exp(- M_over_mstar)
-
-    return res_arr
-
-
-# In[40]:
-
-def schechter_log_func(stellar_mass,phi_star,alpha,m_star):
-    """
-    Returns a plottable Schechter function for the 
-        stellar mass functions of galaxies
-    
-    Parameters
-    ----------
-    stellar_mass: array-like
-        An array of unlogged stellar mass values which 
-        will eventually be the x-axis values the function
-        is plotted against
-    phi_star: float-like
-        A constant which normalizes (?) the function;
-        Moves the graph up and down
-    alpha: negative integer-like
-        The faint-end, or in this case, low-mass slope;
-        Describes the power-law portion of the curve
-    m_star: float-like
-        Unlogged value of the characteristic (?) stellar
-        mass; the "knee" of the function, where the 
-        power-law gives way to the exponential portion
-        
-    Returns
-    -------
-    res: array-like
-        Array of values to be plotted on a log
-        scale to display the Schechter function
-        
-    """
-    constant = np.log(10) * phi_star
-    log_M_Mstar = np.log10(stellar_mass/m_star)
-    res = constant * 10**(log_M_Mstar * (alpha+1)) *\
-             np.exp(-10**log_M_Mstar)
-        
-    return res
-
-
-# In[41]:
-
-def schech_integral(edge_1,edge_2,phi_star,alpha,Mstar):
-    bin_integral = (integrate.quad(schechter_real_func,edge_1,edge_2,\
-        args=(phi_star,alpha,Mstar))[0])
-#     tot_integral = (integrate.quad(schechter_real_func,9.1,11.7,\
-# args=(phi_star,alpha,Mstar)))[0]
-# #     
-#     result = bin_integral/tot_integral/0.2
-    
-    return bin_integral
-
-
-def schech_step_3(xdata,phi_star,alpha,Mstar):
-    """
-    xdata: array-like
-        Unlogged x-values
-    Mstar:
-        unlogged
-    """
-    test_int = []
-    for ii in range(len(xdata)):
-        test_int.append((schech_integral(10**bins_curve_fit[ii],\
-            10**bins_curve_fit[ii+1],phi_star,alpha,Mstar)))
-    return test_int
-
-# In[44]:
-
-def find_params(bin_int,mean_mass,count_err):
-    """
-    Parameters
-    ----------
-    bin_int: array-like
-        Integral (number of counts) in each bin of width dlogM
-    mean_mass: array-like
-        Logged values (?)
-
-    Returns
-    -------
-    opt_v: array-like
-        Array with three values: phi_star, alpha, and M_star
-    res_arr: array-like
-        Array with two values: alpha and log_M_star
-
-
-    """
-    xdata = 10**mean_mass
-#     xdata = mean_mass
-    p0    = (1.5,-1.05,10**10.64)
-    opt_v,est_cov = optimize.curve_fit(schech_step_3,xdata,\
-                            bin_int,p0=p0,sigma=count_err,check_finite=True)
-    alpha   = opt_v[1]
-    log_m_star    = np.log10(opt_v[2])
-    
-    res_arr = np.array([alpha,log_m_star])
-    
-    perr = np.sqrt(np.diag(est_cov))
-
-    return opt_v, res_arr, perr, est_cov
-
-# fig, ax = plt.subplots()
-# ax.set_yscale('log')
-# ax.set_xscale('log')
-# # ax.plot(eco_mass_means[0][:-3],test)
-# ax.plot(10**bin_centers,schech_vals_graph)
-# ax.plot(10**eco_mass_means[0][:-3],(eco_dec_smf[1][0]))
-# plt.show()      
 
 
 # # Regular Plotting Reintroduced
@@ -1741,55 +1513,233 @@ plt.show()
 #         A[bin_str] = [zz_tot_max,zz_tot_min]
 
 
-def hist_nn_dist(distance,neigh_val,ax,mass_bins,mass):
+###############################################################################
 
-    edges        = mass_bins
+def schechter_real_func(mean_of_mass_bin,phi_star,alpha,Mstar):
+    """
+    
+    mean_of_mass_bin: array-like
+        Unlogged x-values
+    phi-star: float-like
+        Normalization value
+    alpha: float-like
+        Low-mass end slope
+    Mstar: float-like
+        Unlogged value where function switches from power-law to exponential
+    
+    """
+#     M_over_mstar = (10**mean_of_mass_bin)/Mstar
+    M_over_mstar = (mean_of_mass_bin)/Mstar
+    res_arr    = (phi_star) * (M_over_mstar**(alpha)) *\
+                             np.exp(- M_over_mstar)
 
-    # print 'length bins:'
-    # print len(bins)
+    return res_arr
+
+
+# In[40]:
+
+def schechter_log_func(stellar_mass,phi_star,alpha,m_star):
+    """
+    Returns a plottable Schechter function for the 
+        stellar mass functions of galaxies
+    
+    Parameters
+    ----------
+    stellar_mass: array-like
+        An array of unlogged stellar mass values which 
+        will eventually be the x-axis values the function
+        is plotted against
+    phi_star: float-like
+        A constant which normalizes (?) the function;
+        Moves the graph up and down
+    alpha: negative integer-like
+        The faint-end, or in this case, low-mass slope;
+        Describes the power-law portion of the curve
+    m_star: float-like
+        Unlogged value of the characteristic (?) stellar
+        mass; the "knee" of the function, where the 
+        power-law gives way to the exponential portion
+        
+    Returns
+    -------
+    res: array-like
+        Array of values to be plotted on a log
+        scale to display the Schechter function
+        
+    """
+    constant = np.log(10) * phi_star
+    log_M_Mstar = np.log10(stellar_mass/m_star)
+    res = constant * 10**(log_M_Mstar * (alpha+1)) *\
+             np.exp(-10**log_M_Mstar)
+        
+    return res
+
+def schechter_integral(bin_edges,phi_star,alpha,Mstar):
+    temp_bin_int = [[] for jj in xrange(len(bin_edges)-1)]
+    for ii in xrange(len(bin_edges)-1):
+        temp_bin_int[ii] = (integrate.quad(schechter_real_func,
+            bin_edges[ii],bin_edges[ii+1],args=(phi_star,alpha,Mstar))[0])
+
+    return temp_bin_int
+
+def find_params(bin_int,bin_edges,count_err):
+    """
+    Parameters
+    ----------
+    bin_int: array-like
+        Integral (number of counts) in each bin of width dlogM
+    bin_edges: array-like
+        Logged bin_edges for the integration step
+    count_err: array-like
+        The Poisson errors on the number of galaxies in each bin
+
+    Returns
+    -------
+    opt_v: array-like
+        Array with three values: phi_star, alpha, and M_star
+    res_arr: array-like
+        Array with two values: alpha and log_M_star
+    perr: array-like
+        Has the errors for the parameters
+
+
+    """
+
+    p0    = (1.5,-1.05,10**10.64)
+    opt_v,est_cov = optimize.curve_fit(schechter_integral,bin_edges,\
+                            bin_int,p0=p0,sigma=count_err,check_finite=True)
+    alpha   = opt_v[1]
+    log_m_star    = np.log10(opt_v[2])
+    
+    res_arr = np.array([alpha,log_m_star])
+    
+    perr = np.sqrt(np.diag(est_cov))
+
+    return opt_v, res_arr, perr
+
+# fig, ax = plt.subplots()
+# ax.set_yscale('log')
+# ax.set_xscale('log')
+# # ax.plot(eco_mass_means[0][:-3],test)
+# ax.plot(10**bin_centers,schech_vals_graph)
+# ax.plot(10**eco_mass_means[0][:-3],(eco_dec_smf[1][0]))
+# plt.show()      
+
+
+###############################################################################
+
+def perc_calcs(mass,bins,dlogM):
+    mass_counts, edges = np.histogram(mass,bins)
+    mass_freq          = mass_counts/float(len(mass))/dlogM
+    
+    bin_centers        = 0.5*(edges[:-1]+edges[1:])
+    
+    non_zero = (mass_freq!=0)
+    
+    mass_freq_1 = mass_freq[non_zero]
+    
+    smf_err            = np.sqrt(mass_counts)/float(len(mass))/dlogM
+    
+    smf_err_1   = smf_err[non_zero] 
+    
+    bin_centers_1 = bin_centers[non_zero]
+
+    return mass_freq_1, smf_err_1, bin_centers_1
+
+
+# In[290]:
+
+def quartiles(mass):
+    dec_val     =  int(len(mass)/4)
+    res_list      =  [[] for bb in range(4)]
+
+    for aa in range(0,4):
+        if aa == 3:
+            res_list[aa] = mass[aa*dec_val:]
+        else:
+            res_list[aa] = mass[aa*dec_val:(aa+1)*dec_val]
+
+    return res_list
+
+
+# In[291]:
+
+def deciles(mass):
+    dec_val     =  int(len(mass)/10)
+    res_list      =  [[] for bb in range(10)]
+
+    for aa in range(0,10):
+        if aa == 9:
+            res_list[aa] = mass[aa*dec_val:]
+        else:
+            res_list[aa] = mass[aa*dec_val:(aa+1)*dec_val]
+
+    return res_list
+
+
+# In[412]:
+
+def mean_perc_mass(mass,bins):
+    """
+    Returns mean mass of galaxies in each bin
+
+    Parameters
+    ----------
+    mass_dist: array-like
+        An array with mass values in at index 0 (when transformed) 
+    bins: array=like
+        A 1D array with the values which will be used as the bin edges     
+
+    Returns
+    -------
+
+    """
+    edges        = bins
 
     digitized    = np.digitize(mass,edges)
     digitized   -= int(1)
-    max_num = max(digitized)
-    idx = list(np.where(mass[digitized==0]))
-    idx_2 = idx.append(list(np.where(mass[digitized==1])))
-    # idx_3 = idx_2.append(np.where(mass[digitized==2]))
-    # idx_4 = idx_3.append(np.where(mass[digitized==3]))
-    # idx_5 = np.array(idx_4)
-    # print idx_5
-    # print type(idx_5)
-    print idx_2
-    print type(idx_2)
-    # idx = [digitized==(max_num-6)]
-    # idx = [digitized==0]
-    # sample       = distance[neigh_val][idx]
+    
+    bin_nums          = np.unique(digitized)
+    
+    for ii in bin_nums:
+        if len(mass[digitized==ii]) == 0:
+            mass[digitized==ii] = np.nan
 
-    # bins = Bins_array_create(sample,0.25)
-    # counts,edges = np.histogram(sample,bins)
-    # bin_centers = 0.5*(edges[1:]+edges[:-1])
 
-    # # counts = counts/float(len(distance[neigh_val]))/0.5
 
-    # # fig,ax = plt.subplots()
-    # ax.set_yscale('symlog')
-    # ax.set_ylim(10**0,10**3)
-    # ax.set_ylabel('Counts')
-    # ax.set_xlabel(r'Distance to Nth Nearest Neighbor \textnormal{(Mpc)}')
-    # ax.step(bin_centers,counts)
+    mean_mass = np.array([np.nanmean(mass[digitized==ii])\
+                    for ii in bin_nums])
 
-    # plt.show()
+    return mean_mass 
 
-# fig, ax = plt.subplots(nrows=2,ncols=3,sharey=True)
-# fig, ax = plt.subplots()
-# # axes_flat = ax.flatten()
 
-# # zz = 0
-# # while zz <= 4:
-# #     for ii in range(len(nn_mass_dist)):
-# #         for kk in range(len(nn_mass_dist)-2):
-# #             hist_nn_dist(nn_mass_dist[ii].T,(kk+1),axes_flat[kk])
-# #     zz += 1
-# for ii in range(len(nn_mass_dist)):
-#     hist_nn_dist(nn_mass_dist[ii].T,1,ax,bins,nn_mass_dist[ii].T[0])
-        
-# plt.show()
+eco_dec = {}
+for cc in range(len(eco_mass_dat)):
+    eco_dec[neigh_vals[cc]] = deciles(eco_mass_dat[cc])
+    
+eco_dec_smf = {}
+eco_dec_err = {}
+eco_dec_bin = {}
+
+for ss in neigh_vals:
+    eco_dec_smf[ss] = {}
+    eco_dec_err[ss] = {}
+    eco_dec_bin[ss] = {}
+    for tt in range(len(eco_dec[ss])):
+        eco_dec_smf[ss][tt], eco_dec_err[ss][tt], eco_dec_bin[ss][tt] = \
+        perc_calcs(eco_dec[ss][tt],bins,dlogM)    
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################

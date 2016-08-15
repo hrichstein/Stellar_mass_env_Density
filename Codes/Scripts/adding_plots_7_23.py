@@ -999,16 +999,6 @@ for jj in range(len(neigh_vals)):
          eco_low_bins[neigh_vals[jj]], eco_high_bins[neigh_vals[jj]]=\
               hist_calcs(eco_mass_dat[jj],bins,dlogM)
 
-
-# In[288]:
-
-eco_low[1]
-
-
-# In[289]:
-
-
-
 # # Stellar Mass Function
 
 # In[294]:
@@ -1037,13 +1027,6 @@ plt.subplots_adjust(left=0.15, bottom=0.15, right=0.85, top=0.93,\
 
 plt.show()
 
-
-
-
-
-# # Regular Plotting Reintroduced
-
-# In[104]:
 
 def plot_all_rats(bin_centers,y_vals,neigh_val,ax,col_num,plot_idx,text=False):
     """
@@ -1578,9 +1561,8 @@ def schechter_integral(bin_edges,phi_star,alpha,Mstar):
     temp_bin_int = [[] for jj in xrange(len(bin_edges)-1)]
     for ii in xrange(len(bin_edges)-1):
         temp_bin_int[ii] = (integrate.quad(schechter_real_func,
-            bin_edges[ii],bin_edges[ii+1],args=(phi_star,alpha,Mstar))[0])
-
-    return temp_bin_int
+            10**bin_edges[ii],10**bin_edges[ii+1],args=(phi_star,alpha,Mstar))[0])
+    return np.array(temp_bin_int)
 
 def find_params(bin_int,bin_edges,count_err):
     """
@@ -1617,13 +1599,7 @@ def find_params(bin_int,bin_edges,count_err):
 
     return opt_v, res_arr, perr
 
-# fig, ax = plt.subplots()
-# ax.set_yscale('log')
-# ax.set_xscale('log')
-# # ax.plot(eco_mass_means[0][:-3],test)
-# ax.plot(10**bin_centers,schech_vals_graph)
-# ax.plot(10**eco_mass_means[0][:-3],(eco_dec_smf[1][0]))
-# plt.show()      
+    
 
 
 ###############################################################################
@@ -1743,3 +1719,15 @@ for ss in neigh_vals:
 ###############################################################################
 ###############################################################################
 ###############################################################################
+def schech_integral(edge_1,edge_2,phi_star,alpha,Mstar):
+    bin_integral = (integrate.quad(schechter_real_func,edge_1,edge_2,\
+         args=(phi_star,alpha,Mstar))[0])     
+    return bin_integral
+ 
+ 
+def schech_step_3(xdata,phi_star,alpha,Mstar):
+    test_int = []
+    for ii in range(len(xdata)):
+        test_int.append((schech_integral(10**bins_curve_fit[ii],\
+             10**bins_curve_fit[ii+1],phi_star,alpha,Mstar)))
+    return test_int

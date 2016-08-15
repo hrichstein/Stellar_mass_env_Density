@@ -1587,7 +1587,7 @@ def find_params(bin_int,bin_edges,count_err):
 
     """
 
-    p0    = (1.5,-1.05,10**10.64)
+    p0    = (1.5e-11,-1.05,10**10.64)
     opt_v,est_cov = optimize.curve_fit(schechter_integral,bin_edges,\
                             bin_int,p0=p0,sigma=count_err,check_finite=True)
     alpha   = opt_v[1]
@@ -1599,7 +1599,15 @@ def find_params(bin_int,bin_edges,count_err):
 
     return opt_v, res_arr, perr
 
-    
+a,b,c = find_params(eco_freq[0],bins,eco_freq[1])
+
+test_int = schechter_integral(bins,a[0],a[1],a[2])    
+# optimize.curve_fit(schechter_integral,bins,eco_freq[0],p0=a,sigma=eco_freq[1])
+fig, ax = plt.subplots()
+ax.set_yscale('log')
+ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1])
+ax.plot(bin_centers,test_int)
+plt.show()
 
 
 ###############################################################################
@@ -1719,30 +1727,30 @@ for ss in neigh_vals:
 ###############################################################################
 ###############################################################################
 ###############################################################################
-def schech_integral(edge_1,edge_2,phi_star,alpha,Mstar):
-    bin_integral = (integrate.quad(schechter_real_func,edge_1,edge_2,\
-         args=(phi_star,alpha,Mstar))[0])     
-    return bin_integral
+# def schech_integral(edge_1,edge_2,phi_star,alpha,Mstar):
+#     bin_integral = (integrate.quad(schechter_real_func,edge_1,edge_2,\
+#          args=(phi_star,alpha,Mstar))[0])     
+#     return bin_integral
  
  
-def schech_step_3(bin_edges,phi_star,alpha,Mstar):
-    test_int = []
-    for ii in range(len(bin_edges)-1):
-        test_int.append((schech_integral(10**bin_edges[ii],\
-             10**bin_edges[ii+1],phi_star,alpha,Mstar)))
-    return test_int
+# def schech_step_3(bin_edges,phi_star,alpha,Mstar):
+#     test_int = []
+#     for ii in range(len(bin_edges)-1):
+#         test_int.append((schech_integral(10**bin_edges[ii],\
+#              10**bin_edges[ii+1],phi_star,alpha,Mstar)))
+#     return test_int
 
-def find_params(bin_int,bin_edges,count_err):
+# def find_params(bin_int,bin_edges,count_err):
 
-    p0    = (1.5,-1.05,10**10.64)
-    opt_v,est_cov = optimize.curve_fit(schech_step_3,bin_edges,\
-                            bin_int,p0=p0,sigma=count_err,check_finite=True)
-    alpha   = opt_v[1]
-    log_m_star    = np.log10(opt_v[2])
+#     p0    = (1.5,-1.05,10**10.64)
+#     opt_v,est_cov = optimize.curve_fit(schech_step_3,bin_edges,\
+#                             bin_int,p0=p0,sigma=count_err,check_finite=True)
+#     alpha   = opt_v[1]
+#     log_m_star    = np.log10(opt_v[2])
     
-    res_arr = np.array([alpha,log_m_star])
+#     res_arr = np.array([alpha,log_m_star])
     
-    perr = np.sqrt(np.diag(est_cov))
+#     perr = np.sqrt(np.diag(est_cov))
 
-    return opt_v, res_arr, perr
+#     return opt_v, res_arr, perr
 

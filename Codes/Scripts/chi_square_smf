@@ -94,7 +94,9 @@ def chi_square(obs,exp,sigma):
     chi_sum = []
     for ii in range(len(obs)):
         # print (obs[ii]-exp[ii])**2/sigma[ii]
-        chi_sum.append((obs[ii]-exp[ii])**2/(sigma[ii])**2)
+        chi_num = (obs[ii]-exp[ii])**2
+        chi_den = sigma[ii]**2
+        chi_sum.append(chi_num/chi_den)
     return np.sum(chi_sum)
 
 obs_arr = [orig_tot_mean,m1_tot_mean,beta_tot_mean]

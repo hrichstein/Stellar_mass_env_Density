@@ -1609,6 +1609,44 @@ ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1])
 ax.plot(bin_centers,test_int)
 plt.show()
 
+###############################################################################
+def chi_finder(bin_int,bin_edges,phi_star,alpha,logMstar,count_err):
+    """
+    bin_int: array-like
+        Number from data histogram
+    bin_edges: array-like
+        The edges of integration for each mass bin
+    count_err: array-like
+        Poisson errors on bin_int
+
+    Returns
+    -------
+    chi_sq_ret: float-like
+        Reduced chi-square value for the fit
+
+    """
+    schech_vals = schechter_integral(bin_edges,phi_star,alpha,logMstar)
+
+    chi_sq = (bin_int - schech_vals)/count_err
+    
+    chi_sq_ret = np.sum(chi_sq**2)/(len(bin_edges)-1)
+
+    return chi_sq_ret
+
+ # chi_finder(eco_freq[0],bins,a[0],a[1],a[2],eco_freq[1]) working example    
+###############################################################################
+chi_sq_mocks = [[] for ii in xrange(len(mass_freq))]
+for ii in range(len(mass_freq)):
+    bin_int_test = mass_freq[ii][0] 
+    count_err_test = mass_freq[ii][1]
+    opt_v_test, res_arr_test, perr_test = find_params(bin_int_test,bins,
+        count_err_test)
+    chi_sq_mocks[ii] = chi_finder(bin_int_test,bins,opt_v_test[0],
+        opt_v_test[1],opt_v_test[2],count_err_test)
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
 
 ###############################################################################
 

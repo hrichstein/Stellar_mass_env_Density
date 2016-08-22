@@ -285,7 +285,7 @@ def plot_calcs(mass,bins,dlogM):
     ratio_dict_list[1] = yerr
     ratio_dict         = ratio_dict_list
 
-    return bin_centers, mass_freq, ratio_dict, bin_centers_fin
+    return bin_centers_fin, mass_freq, ratio_dict
 
 ###############################################################################
 
@@ -869,7 +869,7 @@ dirpath += r"\Catalogs\Beta_M1_Behroozi"
 dirpath += r"\ab_matching"
 dirpath += r"\Resolve_plk_5001_so_mvir_hod1_scatter0p2_mock1_ECO_Mocks"
 
-usecols  = (0,1,2,13)
+usecols  = (0,1,2,4,13)
 dlogM    = 0.2
 
 ##############################################################################
@@ -878,7 +878,7 @@ dlogM    = 0.2
 
 ECO_cats = (Index(dirpath,'.dat'))
 
-names    = ['ra','dec','cz','logMstar']
+names    = ['ra','dec','cz','Halo_ID','logMstar']
 PD       = [(pd.read_csv(ECO_cats[ii],sep="\s+", usecols= usecols,header=None,\
                    skiprows=2,names=names)) for ii in range(len(ECO_cats))]
 PD_comp  = [(PD[ii][PD[ii].logMstar >= 9.1]) for ii in range(len(ECO_cats))]

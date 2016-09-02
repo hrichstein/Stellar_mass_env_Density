@@ -188,7 +188,7 @@ def sph_to_cart(ra,dec,cz,h):
 ##N is the same for all cases
 ##Need something like this for Density in a Sphere method
 
-def calc_dens(n_val,r_val):
+def calc_dens_nn(n_val,r_val):
     """
     Returns densities of spheres with radius being the distance to the 
         nth nearest neighbor.
@@ -718,6 +718,96 @@ nn_neigh_idx   = np.array([(np.array(nn_idx).T[ii].T[neigh_vals].T) \
                     for ii in range(len(coords_test))])    
 
 ###############################################################################
+
+##nn_dist_sorting is a dictionary which has a key for every mock, and then keys for
+##each nn value. Each nn_dist_sorting[mock][nn] has however many elements as there are galaxies in
+##that specific mock. These elements are 1 by 2 arrays, with the logMstar of the
+##galaxy and the distance to its nth nearest neighbor
+##dist_sort_mass is the dictionary of mocks of nn's with the logMstars sorted
+##according to the distance to the nth nearest neighbor. This was sorted using 
+##large to small distance, so low to high density.
+nn_dist_sorting    = {}
+dist_sort_mass = {}
+
+##for use with density in a sphere
+# nn_dens    = {}
+# mass_dat   = {}
+
+ratio_info = {}
+bin_cens_diff = {}
+
+# mass_freq  = [[] for xx in xrange(len(coords_test))]
+mass_freq = {}
+
+for ii in range(len(coords_test)):
+    nn_dist_sorting[ii]    = {}
+    dist_sort_mass[ii] = {}
+
+    ##for use with density in a sphere
+    # nn_dens[ii]    = {}
+    # mass_dat[ii]   = {}
+
+    ratio_info[ii] = {}
+    bin_cens_diff[ii] = {}
+
+    for jj in range(len(neigh_vals)):        
+        nn_dist_sorting[ii][(neigh_vals[jj])] = np.column_stack((nn_mass_dist[ii].T\
+            [0],np.array(nn_mass_dist[ii].T[range(1,len(neigh_vals)+1)[jj]])))        
+        ##smallest distance to largest (before reverse) Reversed, so then the
+        ##largest distances are first, meaning the least dense environments
+        ##gives indices of the sorted distances
+        dist_sort_idx = np.argsort(np.array(nn_dist_sorting[ii][neigh_vals[jj]].T\
+            [1]))[::-1]
+
+        ##using the index to sort the masses
+        dist_sort_mass[ii][(neigh_vals[jj])] = (nn_dist_sorting[ii][neigh_vals\
+            [jj]][dist_sort_idx].T[0])
+
+        ##this created a dictionary with arrays containing the logMstar and
+        ##environment densities . a moot point for nn environment, but this may
+        ##be useful when I switch out nn for density of a sphere
+
+        # nn_dens[ii][(neigh_vals[jj])]  = np.column_stack((nn_mass_dist[ii].T\
+        #                                         [0],calc_dens_nn(neigh_vals[jj],\
+        #                 nn_mass_dist[ii].T[range(1,len(neigh_vals)+1)[jj]])))
+        ##lowest density to highest
+        # idx = np.array(nn_dens[ii][neigh_vals[jj]].T[1].argsort())
+        # mass_dat[ii][(neigh_vals[jj])] = (nn_dens[ii][neigh_vals[jj]]\
+        #                                             [idx].T[0])
+
+        ##bin_centers is the median mass value of each bin; good for plotting
+        ##to make things seem equally spaced
+        ##mass_freq is now a dictionary with keys for each mock. Each key 
+        ##houses two arrays. one with the frequency values and another with
+        ##Poisson errors
+        ##ratio_info is a dictionary with mock number of keys to other 
+        ##dictionaries. Then, there are keys for each nn.  These give back a
+        ##list. The first list item is a dictionary with three keys (2,4,10),
+        ##corresponding to the fractional cuts that we made
+        ##The next item is a list of three arrays, housing the corresponding
+        ##errors
+        ##bin_cens_diff is so that, for the off chance of empty bins, we have
+        ##the proper bins to plot the ratio_info with (actually, this is
+        ##probably useful for the ratio cuts and larger mass bins. idk)
+        bin_centers, mass_freq[ii], ratio_info[ii][neigh_vals[jj]],\
+        bin_cens_diff[ii][neigh_vals[jj]] = \
+                        plot_calcs(dist_sort_mass[ii][neigh_vals[jj]],bins,dlogM)
+
+####I'll comment on this when I begin again
+all_mock_meds = {}
+mock_meds_bins = {}
+all_mock_mass_means = {}
+
+for vv in range(len(nn_mass_dist)):
+    all_mock_meds[vv] = {}
+    mock_meds_bins[vv]= {}
+    all_mock_mass_means[vv] = {}
+    for jj in range(len(nn_mass_dist[vv].T)-1):
+        all_mock_meds[vv][neigh_vals[jj]],mock_meds_bins[vv][neigh_vals[jj]]\
+         = (bin_func(nn_mass_dist[vv],bins,(jj+1)))
+        all_mock_mass_means[vv][neigh_vals[jj]] =\
+         (mean_bin_mass(nn_mass_dist[vv],bins,(jj+1))) 
+
 ###############################################################################
 ###############################################################################
 ###############################################################################
@@ -764,6 +854,8 @@ for ii in range(len(mass_arr)):
             frac.append(num_same_halo/(1.*num_in_bin))
         halo_frac[ii][jj] = frac        
 
+##Finding the mean fraction for each mass bin in the separate mocks.  Also
+##finding the standard deviation, to use as error
 mean_mock_halo_frac = {}
 
 for ii in neigh_vals:
@@ -780,3 +872,31 @@ for ii in neigh_vals:
     for uu in xrange(len(oo_tot))]
     mean_mock_halo_frac[bin_str] = np.array([oo_tot_mean,oo_tot_std])        
 ###############################################################################
+
+##Plotting the mean halo frac for the mocks for each nn value
+nrow = int(2)
+ncol = int(3)
+
+fig,axes = plt.subplots(nrows=nrow,ncols=ncol,                        \
+    figsize=(12,12),sharex=True,sharey=True)
+axes_flat = axes.flatten()
+
+zz = int(0)
+while zz <=4:
+    for jj in neigh_vals:
+        for kk in range(len(halo_frac)):
+            if kk == 0:
+                value = True
+            else:
+                value = False
+            plot_halo_frac(bin_centers,halo_frac[kk][jj],axes_flat[zz],zz,\
+                text = value)
+        nn_str = '{0}'.format(jj)
+        plot_mean_halo_frac(bin_centers,mean_mock_halo_frac[nn_str][0],\
+            axes_flat[zz],mean_mock_halo_frac[nn_str][1])
+        zz += 1
+
+plt.subplots_adjust(top=0.97,bottom=0.1,left=0.03,right=0.99,hspace=0.10,\
+    wspace=0.12)     
+
+plt.show()              

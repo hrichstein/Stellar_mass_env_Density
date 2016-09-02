@@ -547,6 +547,22 @@ def mean_bin_mass(mass_dist,bins,kk):
 
 
 ###############################################################################
+
+def plot_halo_frac(bin_centers,y_vals,ax,plot_idx,text=False):
+    titles = [1,2,3,5,10,20]
+    ax.set_xlim(9.1,11.9)
+    ax.set_xticks(np.arange(9.5,12.,0.5)) 
+    ax.tick_params(axis='x', which='major', labelsize=16)
+    if text == True:
+        title_here = 'n = {0}'.format(titles[plot_idx])
+        ax.text(0.05, 0.95, title_here,horizontalalignment='left',            \
+            verticalalignment='top',transform=ax.transAxes,fontsize=18)
+    if plot_idx == 4:
+        ax.set_xlabel('$\log\ (M_{*}/M_{\odot})$',fontsize=20)
+    ax.plot(bin_centers,y_vals,color='silver')
+    
+def plot_mean_halo_frac(bin_centers,mean_vals,ax,std):
+    ax.errorbar(bin_centers,mean_vals,yerr=std,color='darkmagenta')    
 ###############################################################################
 ###############################################################################
 ###############################################################################
@@ -578,18 +594,16 @@ logMhalo = eco_comp.logMhalo
 cent_sat = eco_comp.cent_sat
 group_ID = eco_comp.group_ID
 Mr_eco   = eco_comp.Mr
+
 ###############################################################################
+##Importing mock data!!!
 
 dirpath = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_Density"
 dirpath+= r"\Catalogs\Beta_M1_Behroozi\ab_matching"
 dirpath+= r"\Resolve_plk_5001_so_mvir_hod1_scatter0p2_mock1_ECO_Mocks"
 
-usecols  = (0,1,2,4,7,13,20,25)
-dlogM    = 0.2
-neigh_dict = {1:0,2:1,3:2,5:3,10:4,20:5}
-
 ECO_cats = (Index(dirpath,'.dat'))
-
+usecols  = (0,1,2,4,7,13,20,25)
 names    = ['ra','dec','cz','Halo_ID','halo_cent_sat','logMstar',
     'group_ID','group_cent_sat']
 
@@ -625,6 +639,9 @@ for ii in range(len(PD_comp)):
 
 min_max_mass_arr = np.array(min_max_mass_arr)
 
+##could change this at some point
+dlogM    = 0.2
+
 ##bins inherently use even decimal points, so this forces odd
 bins = Bins_array_create(min_max_mass_arr,dlogM)
 bins+= 0.1
@@ -634,9 +651,6 @@ for ii in bins:
     if ii > 11.77:
         bins_list.remove(ii)
 bins = np.array(bins_list)
-
-##calulating the number of bins for later reference
-num_of_bins = int(len(bins) - 1) 
 
 ra_arr  = np.array([(PD_comp[ii].ra) for ii in range(len(PD_comp))])
 dec_arr  = np.array([(PD_comp[ii].dec) for ii in range(len(PD_comp))])
@@ -650,3 +664,119 @@ group_id_arr  = np.array([(PD_comp[ii].group_ID)
         for ii in range(len(PD_comp))])
 group_cent_sat_arr  = np.array([(PD_comp[ii].group_cent_sat) 
     for ii in range(len(PD_comp))])
+
+###############################################################################
+###############################################################################
+###############################################################################
+##Variables and dictionaries for later use throughout.
+
+##calulating the number of bins for later reference
+num_of_bins = int(len(bins) - 1) 
+
+neigh_dict = {1:0,2:1,3:2,5:3,10:4,20:5}
+
+neigh_vals  = np.array([1,2,3,5,10,20])
+
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+
+##Changing the data from degrees and velocity to Cartesian system
+coords_test = np.array([sph_to_cart(ra_arr[vv],dec_arr[vv],cz_arr[vv],70)\
+                 for vv in range(len(ECO_cats))])
+
+##Lists which will house information from the cKD tree
+nn_arr_temp = [[] for uu in xrange(len(coords_test))]
+nn_arr      = [[] for xx in xrange(len(coords_test))]
+nn_idx      = [[] for zz in xrange(len(coords_test))]
+
+##Creating the cKD tree for nearest neighbors, and having it find the distances
+##to the 21 nearest neighbors of each galaxy (the first is itself, hence 20+1)
+##nn_arr houses the actual distances
+##nn_idx houses the index of the galaxy which is the nth nearest neighbor
+for vv in range(len(coords_test)):
+    nn_arr_temp[vv] = spatial.cKDTree(coords_test[vv])
+    nn_arr[vv] = np.array(nn_arr_temp[vv].query(coords_test[vv],21)[0])
+    nn_idx[vv] = np.array(nn_arr_temp[vv].query(coords_test[vv],21)[1])
+
+##nn_specs is a list, with 8 elements, one for each mock
+##each list has a series of numpy arrays, however many galaxies there are in
+##that mock
+##these arrays give the distances to the nearest neighbors of interest
+nn_specs       = [(np.array(nn_arr).T[ii].T[neigh_vals].T) for ii in\
+                     range(len(coords_test))]
+
+##houses the same info as nn_specs, except now, the logMstar of each galaxy is
+##the first term of the numpy array                     
+nn_mass_dist   = np.array([(np.column_stack((mass_arr[qq],nn_specs[qq])))\
+                     for qq in range(len(coords_test))])
+
+
+##houses the indexes of the neighbors of interest for each galaxy
+nn_neigh_idx   = np.array([(np.array(nn_idx).T[ii].T[neigh_vals].T) \
+                    for ii in range(len(coords_test))])    
+
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+
+##Beginning the process of calculating how many galaxies in a specific mass bin
+##have their nth nearest neighbor in the same halo as them
+
+##truth_vals will be a dictionary with keys for each mock and then keys for
+##each nn value; a boolean type array. This structure amazes me and I have a 
+##difficult time imagining I came up with it myself...
+truth_vals = {}
+for ii in range(len(halo_id_arr)):
+    truth_vals[ii] = {}
+    for jj in neigh_vals:
+        halo_id_neigh = halo_id_arr[ii][nn_neigh_idx[ii].T[neigh_dict[jj]]].values
+        truth_vals[ii][jj] = halo_id_neigh==halo_id_arr[ii].values
+
+##halo_frac is a dictionary much like the truth values. Number of mocks for keys,
+##then number of nearest neighbors. For each mock, neighbor, specific mass bin,
+##it lists the fraction of galaxies with nn in their same halo
+##I also have a hard time remembering developing this code... I imagine it was
+##a messy process. But it worked out in the end!
+halo_frac = {}
+for ii in range(len(mass_arr)):
+    halo_frac[ii] = {}
+    mass_binning = np.digitize(mass_arr[ii],bins)
+    bins_to_use = list(np.unique(mass_binning))
+    if (len(bins)-1) not in bins_to_use:
+        bins_to_use.append(len(bins)-1)
+    if len(bins) in bins_to_use:
+        bins_to_use.remove(len(bins))
+    for jj in neigh_vals:
+        one_zero = truth_vals[ii][jj].astype(int)
+        frac = []
+        for xx in bins_to_use:
+            truth_binning = one_zero[mass_binning==xx]
+            num_in_bin = len(truth_binning)
+            if num_in_bin == 0:
+                num_in_bin = np.nan
+            num_same_halo = np.count_nonzero(truth_binning==1)
+            frac.append(num_same_halo/(1.*num_in_bin))
+        halo_frac[ii][jj] = frac        
+
+mean_mock_halo_frac = {}
+
+for ii in neigh_vals:
+    for jj in range(len(halo_frac)):
+        bin_str = '{0}'.format(ii)
+        oo_arr = halo_frac[jj][ii]
+        n_o_elem = len(oo_arr)
+        if jj == 0:
+            oo_tot = np.zeros((n_o_elem,1))
+        oo_tot = np.insert(oo_tot,len(oo_tot.T),oo_arr,1)
+    oo_tot = np.array(np.delete(oo_tot,0,axis=1))
+    oo_tot_mean = [np.nanmean(oo_tot[uu]) for uu in xrange(len(oo_tot))]
+    oo_tot_std  = [np.nanstd(oo_tot[uu])/np.sqrt(len(halo_frac)) \
+    for uu in xrange(len(oo_tot))]
+    mean_mock_halo_frac[bin_str] = np.array([oo_tot_mean,oo_tot_std])        
+###############################################################################

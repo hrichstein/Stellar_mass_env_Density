@@ -605,12 +605,14 @@ group_cent_sat_arr  = np.array([(PD_comp[ii].group_cent_sat)
 ##Variables and dictionaries for later use throughout.
 
 ##calulating the number of bins for later reference
-num_of_bins = int(len(bins) - 1) 
+num_of_mocks = len(PD_comp)
+num_of_bins  = int(len(bins) - 1) 
 
-neigh_dict = {1:0,2:1,3:2,5:3,10:4,20:5}
+neigh_dict   = {1:0,2:1,3:2,5:3,10:4,20:5}
+frac_dict    = {2:0,4:1,10:2}
 
-neigh_vals  = np.array([1,2,3,5,10,20])
-
+neigh_vals   = np.array([1,2,3,5,10,20])
+frac_vals    = np.array([2,4,10])
 ###############################################################################
 ###############################################################################
 ###############################################################################
@@ -629,7 +631,7 @@ nn_idx      = [[] for zz in xrange(len(coords_test))]
 ##to the 21 nearest neighbors of each galaxy (the first is itself, hence 20+1)
 ##nn_arr houses the actual distances
 ##nn_idx houses the index of the galaxy which is the nth nearest neighbor
-for vv in range(len(coords_test)):
+for vv in range(num_of_mocks):
     nn_arr_temp[vv] = spatial.cKDTree(coords_test[vv])
     nn_arr[vv] = np.array(nn_arr_temp[vv].query(coords_test[vv],21)[0])
     nn_idx[vv] = np.array(nn_arr_temp[vv].query(coords_test[vv],21)[1])
@@ -639,17 +641,17 @@ for vv in range(len(coords_test)):
 ##that mock
 ##these arrays give the distances to the nearest neighbors of interest
 nn_specs       = [(np.array(nn_arr).T[ii].T[neigh_vals].T) for ii in\
-                     range(len(coords_test))]
+                     range(num_of_mocks)]
 
 ##houses the same info as nn_specs, except now, the logMstar of each galaxy is
 ##the first term of the numpy array                     
 nn_mass_dist   = np.array([(np.column_stack((mass_arr[qq],nn_specs[qq])))\
-                     for qq in range(len(coords_test))])
+                     for qq in range(num_of_mocks)])
 
 
 ##houses the indexes of the neighbors of interest for each galaxy
 nn_neigh_idx   = np.array([(np.array(nn_idx).T[ii].T[neigh_vals].T) \
-                    for ii in range(len(coords_test))])    
+                    for ii in range(num_of_mocks)])    
 
 ###############################################################################
 
@@ -673,7 +675,7 @@ bin_cens_diff = {}
 # mass_freq  = [[] for xx in xrange(len(coords_test))]
 mass_freq = {}
 
-for ii in range(len(coords_test)):
+for ii in range(num_of_mocks):
     nn_dist_sorting[ii]    = {}
     dist_sort_mass[ii] = {}
 
@@ -739,7 +741,7 @@ all_mock_meds = {}
 
 for jj in range(len(nn_mass_dist[vv].T)-1):
     all_mock_meds[neigh_vals[jj]] = {}
-    for vv in range(len(nn_mass_dist)):
+    for vv in range(num_of_mocks):
         all_mock_meds[neigh_vals[jj]][vv] = (bin_func(nn_mass_dist[vv],\
             bins,(jj+1)))
 
@@ -751,8 +753,99 @@ for jj in range(len(nn_mass_dist[vv].T)-1):
 #         print len(all_mock_meds[neigh_vals[jj]][vv])
 
 
+##Bands for median distances
+##I am torn about eventually turning this into a function. I think there are 
+##a fair amount of variables, etc. between the different times that I do this
+##that if this were a function, it would need to intake a lot of arguments
+##This works by counting the number of columns in one median distance array.
+##Then, after making sure there are the same number of medians in each case,
+##it begins to make a matrix of arrays, 13 rows by 8 columns. So, it inserted
+##the medians of each mock vertically. Then, it can take the max/min of each
+##row!  This definitely came from Victor.
+##Returns a dictionary with keys which are strings of the nn vals. Each key
+##gives a list of two numpy arrays, the first being the max for each bin
+##and the second being the min.
+band_for_medians = {}
+
+for nn in neigh_vals:
+    for ii in range(num_of_mocks):
+        med_str  = '{0}'.format(nn)
+        num_of_meds   = all_mock_meds[nn][ii]
+        if len(num_of_meds) == num_of_bins:
+            n_y_elem = len(num_of_meds)
+        else:
+            while len(num_of_meds) < num_of_bins:
+                num_of_meds_list = list(num_of_meds)
+                num_of_meds_list.append(np.nan)
+                num_of_meds = np.array(num_of_meds_list)
+            n_y_elem = len(num_of_meds)
+        if ii == 0:
+            med_matrix = np.zeros((n_y_elem,1))
+        med_matrix = np.insert(med_matrix,len(med_matrix.T),num_of_meds,1)
+    med_matrix = np.array(np.delete(med_matrix,0,axis=1))
+    med_matrix_max = np.array([np.nanmax(med_matrix[kk]) for kk in \
+        xrange(len(med_matrix))])
+    med_matrix_min = np.array([np.nanmin(med_matrix[kk]) for kk in \
+        xrange(len(med_matrix))])
+    band_for_medians[med_str] = [med_matrix_max,med_matrix_min]
+
 ###############################################################################
+
+##First thing to know: ratio_info. It's a dictionary with a key for each mock
+##and then a key for each neighbor value.  This gives a list, one with 2 items.
+##The first is a dictionary with three keys, one for each frac val. The second
+##is a list of three numpy arrays. Each array has the error on the
+##corresponding frac val numbers
+##Plot_ratio_arr is a dictionary (funny, since you'd think it's an array,right)
+##It has a key for each nn, a key for each frac val, and a key for each mock
+##We just ignore the error. It was calculated for fun? I'm not sure if it will
+##ever be useful for anything, but just in case?  I used to have it be an 
+##option in the function (plot_calcs, I think).
+plot_ratio_arr = {}
+
+for ii in neigh_vals:
+    plot_ratio_arr[ii] = {}
+    for hh in frac_vals:
+        plot_ratio_arr[ii][hh] = {}
+        for jj in range(num_of_mocks):
+            plot_ratio_arr[ii][hh][jj] = ratio_info[jj][ii][0][hh]
+
+band_for_ratios = {}
+
+##This code works just as the code for the median bands does
+##Apparently, there's an all Nan axis encountered somewhere, but that's okay
+for nn in neigh_vals:
+    for vv in frac_vals:
+        bin_str    = '{0}_{1}'.format(nn,vv)
+        for cc in range(num_of_mocks):
+            num_of_rats = plot_ratio_arr[nn][vv][cc]
+            if len(num_of_rats) == num_of_bins:
+                n_elem = len(num_of_rats)
+            else:
+                while len(num_of_rats) < num_of_bins:
+                    num_of_rats_list = list(num_of_rats)
+                    num_of_rats_list.append(np.nan)
+                    num_of_rats = np.array(num_of_rats_list)
+                n_elem = len(num_of_rats)
+            if cc == 0:
+                rat_matrix = np.zeros((n_elem,1))
+            rat_matrix = np.insert(rat_matrix,len(rat_matrix.T),num_of_rats,1)
+        rat_matrix = np.array(np.delete(rat_matrix,0,axis=1))
+        for kk in xrange(len(rat_matrix)):
+            ##this is kind of a hack, because there was no better way to get
+            ##around the infinities
+            rat_matrix[kk][rat_matrix[kk] == np.inf] = np.nan
+        rat_matrix_max = [np.nanmax(rat_matrix[kk]) \
+            for kk in xrange(len(rat_matrix))]
+        rat_matrix_min = [np.nanmin(rat_matrix[kk]) \
+            for kk in xrange(len(rat_matrix))]
+        band_for_ratios[bin_str] = [rat_matrix_max,rat_matrix_min]                 
+
 ###############################################################################
+
+##may need for later... when dealinng with histogram bands
+nn_keys  = np.sort(neigh_dict.keys())
+col_keys = np.sort(frac_dict.keys())
 ###############################################################################
 ###############################################################################
 ###############################################################################

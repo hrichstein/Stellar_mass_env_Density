@@ -29,8 +29,6 @@ va = Vars()
 
 plt.rc('font', **{'family': 'serif', 'serif':['Computer Modern']})
 
-plt.rc('text', usetex=True)
-
 ###############################################################################
 
 pickle_in = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_Density"

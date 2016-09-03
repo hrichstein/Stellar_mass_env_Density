@@ -343,9 +343,6 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
     medians: array-like
         An array with the median distance to the Nth nearest neighbor from 
         all the galaxies in each of the bins
-    np.array(non_zero_bins): array-like
-        An array with the medians of the non-empty bins; so these would be the 
-        x-coords at which to plot the medians
 
     """
     
@@ -367,29 +364,8 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
         
     bin_nums = np.array(bin_nums_list)
     
-#     print bin_nums
-
-    non_zero_bins = []
-    for ii in bin_nums:
-        if (len(mass_dist.T[kk][digitized==ii]) != 0):
-            non_zero_bins.append(bin_centers[ii])
-#     print len(non_zero_bins)
-    
-    for ii in bin_nums:
-
-        if len(mass_dist.T[kk][digitized==ii]) == 0:
-#             temp_list = list(mass_dist.T[kk]\
-#                                              [digitized==ii])
-#             temp_list.append(np.nan)
-            mass_dist.T[kk][digitized==ii] = np.nan
-
-    # print bin_nums
-    # print len(bin_nums)
-    
     medians  = np.array([np.nanmedian(mass_dist.T[kk][digitized==ii])\
         for ii in bin_nums])
-
-    # print len(medians)
 
     if bootstrap == True:
         dist_in_bin    = np.array([(mass_dist.T[kk][digitized==ii])\
@@ -415,7 +391,7 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
 #     print len(medians)
 #     print len(non_zero_bins)
 
-    return medians, np.array(non_zero_bins)    
+    return medians 
 
 ###############################################################################
 
@@ -503,48 +479,6 @@ def hist_calcs(mass,bins,dlogM):
         hist_dict_high[err_key] = high_err_1
     
     return hist_dict_low, hist_dict_high, bin_cens_low, bin_cens_high
-
-###############################################################################
-
-def mean_bin_mass(mass_dist,bins,kk):
-    """
-    Returns mean mass of galaxies in each bin; similar operation done in 
-    plot_calcs, but this is for more general use
-
-    Parameters
-    ----------
-    mass_dist: array-like
-        An array with mass values in at index 0 (when transformed) 
-    bins: array-like
-        A 1D array with the values which will be used as the bin edges
-    kk: integer-like
-        The index of mass_dist (transformed) where the appropriate distance 
-        array may be found
-
-    Returns
-    -------
-    An array of the mean mass of the galaxies in each mass bin
-
-    """
-    edges        = bins
-
-    digitized    = np.digitize(mass_dist.T[0],edges)
-    digitized   -= int(1)
-    
-    bin_nums          = np.unique(digitized)
-    
-    for ii in bin_nums:
-        if len(mass_dist.T[kk][digitized==ii]) == 0:
-            mass_dist.T[kk][digitized==ii] = np.nan
-
-    mean_mass = np.array([np.nanmean(mass_dist.T[0][digitized==ii])                 
-        for ii in bin_nums])
-
-    return mean_mass 
-
-###note, this should use the same bin_centers (for x-coord) as provided by the 
-#median from bin_func
-
 
 ###############################################################################
 
@@ -759,7 +693,7 @@ for ii in range(len(coords_test)):
         dist_sort_idx = np.argsort(np.array(nn_dist_sorting[ii][neigh_vals[jj]].T\
             [1]))[::-1]
 
-        ##using the index to sort the masses
+        ##using the index to sort the masses for each mock according to each nn
         dist_sort_mass[ii][(neigh_vals[jj])] = (nn_dist_sorting[ii][neigh_vals\
             [jj]][dist_sort_idx].T[0])
 
@@ -793,21 +727,31 @@ for ii in range(len(coords_test)):
         bin_cens_diff[ii][neigh_vals[jj]] = \
                         plot_calcs(dist_sort_mass[ii][neigh_vals[jj]],bins,dlogM)
 
-####I'll comment on this when I begin again
+##all_mock_meds is a dictionary with 6 keys, for the nn vals. These have keys
+##for each mock. These keys gve back arrays with the median distance 
+##values to the nth neighbor for each mass bins
+##this previously had some code to give back the appropriate x-coordinates for
+##plotting, but the number of medians is all the same... on the off chance that
+##for some reason this throws an error in the future, the original code is in 
+##pickling.
+
 all_mock_meds = {}
-mock_meds_bins = {}
-all_mock_mass_means = {}
 
-for vv in range(len(nn_mass_dist)):
-    all_mock_meds[vv] = {}
-    mock_meds_bins[vv]= {}
-    all_mock_mass_means[vv] = {}
-    for jj in range(len(nn_mass_dist[vv].T)-1):
-        all_mock_meds[vv][neigh_vals[jj]],mock_meds_bins[vv][neigh_vals[jj]]\
-         = (bin_func(nn_mass_dist[vv],bins,(jj+1)))
-        all_mock_mass_means[vv][neigh_vals[jj]] =\
-         (mean_bin_mass(nn_mass_dist[vv],bins,(jj+1))) 
+for jj in range(len(nn_mass_dist[vv].T)-1):
+    all_mock_meds[neigh_vals[jj]] = {}
+    for vv in range(len(nn_mass_dist)):
+        all_mock_meds[neigh_vals[jj]][vv] = (bin_func(nn_mass_dist[vv],\
+            bins,(jj+1)))
 
+##this is for debugging; shows the number of medians listed for each nn for 
+##each mock. if these are not all the same, there is a problem, and the
+##extra code may, in fact, be needed        
+# for vv in range(8):
+#     for jj in range(6):
+#         print len(all_mock_meds[neigh_vals[jj]][vv])
+
+
+###############################################################################
 ###############################################################################
 ###############################################################################
 ###############################################################################

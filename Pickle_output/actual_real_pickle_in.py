@@ -18,12 +18,19 @@ import os
 import pandas as pd
 from scipy import integrate,optimize,spatial
 
+# class Vars(object):
+#     size_xlabel = 48
+#     size_ylabel = 48
+#     size_text   = 20
+#     size_tick   = 24
+#     size_legend = 24
+
 class Vars(object):
-    size_xlabel = 48
-    size_ylabel = 48
-    size_text   = 20
-    size_tick   = 24
-    size_legend = 24
+    size_xlabel = 24
+    size_ylabel = 24
+    size_text   = 18
+    size_tick   = 18
+    size_legend = 18
 
 va = Vars()
 
@@ -192,7 +199,7 @@ def plot_every_rat(bin_cens,upper,lower,ax,plot_idx,neigh_val,eco_bins,\
     ax.set_xticks(np.arange(9.5, 12., 0.5))
     ax.set_yticks([0,1,2,3,4])
     ax.tick_params(axis='both', labelsize=va.size_tick)
-    # ax.fill_between(bin_cens,upper,lower,color=color,alpha=alpha,label=label)
+    ax.fill_between(bin_cens,upper,lower,color=color,alpha=alpha,label=label)
     plot_neigh_dict = {0:1,1:5,2:20}
     title = r"\boldmath$N=%d$"%(neigh_val)
     if plot_idx == 2:
@@ -261,11 +268,11 @@ for yy in range(2,3):
         #     color = 'lightpink'
         #     label = '0.1 dex'
         #     alpha =  0.5
-        # if yy ==2:
-        #     color = 'royalblue'
-        #     label = '0.2 dex'
-        #     # label=None
-        #     alpha =  0.4
+        if yy ==2:
+            color = 'royalblue'
+            label = '0.2 dex'
+            # label=None
+            alpha =  0.4
         # if yy ==3:
         #     color = 'violet'
         #     label = '0.3 dex'
@@ -323,7 +330,7 @@ def plot_every_med(bin_cens,upper,lower,ax,plot_idx,\
     ax.set_ylim(0,10**1)
     ax.set_yticks(np.arange(0,12,1))  
     ax.set_yticklabels(np.arange(1,10,4))
-    ax.fill_between(bin_cens,upper,lower,color=color,alpha=alpha,label=label)
+    # ax.fill_between(bin_cens,upper,lower,color=color,alpha=alpha,label=label)
     title = r"\boldmath$N=%d$"%(neigh_val)        
     ybot = np.array(eco_vals[0] - eco_vals[1])            
     ytop = np.array(eco_vals[2] - eco_vals[0])            
@@ -332,7 +339,7 @@ def plot_every_med(bin_cens,upper,lower,ax,plot_idx,\
     if neigh_val == 1:
         ax.set_ylabel(r'$D_{N}\ \textnormal{(Mpc)}$',fontsize = \
             va.size_ylabel)
-    if plot_idx == 3:
+    if plot_idx == 2:
         ax.text(0.05, 0.05, title,horizontalalignment='left',\
                     verticalalignment='bottom',transform=ax.transAxes,\
                     fontsize=va.size_text)
@@ -364,7 +371,7 @@ fig,axes = plt.subplots(nrows=nrow_num,ncols=ncol_num,figsize=(14,4),\
 axes_flat= axes.flatten()
 
 # for yy in all_meds_dict:
-for yy in ([1,3]):
+for yy in range(2,3):
     color, label, alpha = scatter_dict_params[yy]
     for xx in neigh_vals:
         upper = all_meds_dict[yy][xx][0]

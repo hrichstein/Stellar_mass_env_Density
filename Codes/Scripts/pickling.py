@@ -25,13 +25,15 @@ if iter_num == 0:
     dirpath+= r"\Resolve_plk_5001_so_mvir_scatter0p2_ECO_Mocks"
 elif iter_num == 1:
     ## M1 change
+    ##changed from no_ab to ab
     dirpath = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_Density"
-    dirpath+= r"\Catalogs\Beta_M1_Behroozi\no_ab_matching"
+    dirpath+= r"\Catalogs\Beta_M1_Behroozi\ab_matching"
     dirpath+= r"\Resolve_plk_5001_so_mvir_hod1_scatter0p2_mock1_ECO_Mocks"
 elif iter_num == 2:
     ##Beta change
+    ##changed from no_ab to ab
     dirpath = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_Density"
-    dirpath+= r"\Catalogs\Beta_M1_Behroozi\no_ab_matching"
+    dirpath+= r"\Catalogs\Beta_M1_Behroozi\ab_matching"
     dirpath+= r"\Resolve_plk_5001_so_mvir_hod1_scatter0p2_mock2_ECO_Mocks"
 
 # In[2]:
@@ -521,6 +523,7 @@ def mean_bin_mass(mass_dist,bins,kk):
 
 ###############################################################################
 
+#########obsolete because I changed the hist_calcs function to calculate error
 def eco_hist_calcs(mass,bins,dlogM):
     """
     Returns dictionaries with the counts for the upper
@@ -608,6 +611,33 @@ def eco_hist_calcs(mass,bins,dlogM):
 ###############################################################################
 ###############################################################################
 ###############################################################################
+eco_path  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
+eco_path += r"\Catalogs\ECO_true"
+
+##ra, dec,cz,absrmag,logMstar,group identifier,fc (cent/sat),logMh (halo)
+##2: logmh, 4:dec, 10:fc, 15: group, 16: absrmag, 19:cz. 20:ra, 21: logmstar
+
+
+eco_cols  = np.array([2,4,10,15,16,19,20,21])
+
+
+# In[282]:
+
+# ECO_true = (Index(eco_path,'.txt'))
+ECO_true = (Index(eco_path,'.csv'))
+names    = ['logMhalo','dec','cent_sat','group_ID','Mr','cz','ra','logMstar']
+PD_eco   = pd.read_csv(ECO_true[0], usecols=(eco_cols),header=None, \
+               skiprows=1,names=names)
+eco_comp = PD_eco[PD_eco.logMstar >= 9.1]
+
+ra_eco   = eco_comp.ra
+dec_eco  = eco_comp.dec
+cz_eco   = eco_comp.cz
+mass_eco = eco_comp.logMstar
+logMhalo = eco_comp.logMhalo
+cent_sat = eco_comp.cent_sat
+group_ID = eco_comp.group_ID
+Mr_eco   = eco_comp.Mr
 ###############################################################################
 
 usecols  = (0,1,2,4,13)
@@ -763,16 +793,16 @@ for ii in range(len(coords_test)):
 
         bin_centers, mass_freq[ii], ratio_info[ii][neigh_vals[jj]],bin_cens_diff[ii][neigh_vals[jj]] =                             plot_calcs(mass_dat[ii][neigh_vals[jj]],bins,dlogM)
 
-pickle_out_smf = pickle_out
-pickle_out_smf+=r"\mock_smfs.p"
+# pickle_out_smf = pickle_out
+# pickle_out_smf+=r"\mock_smfs.p"
 
-if iter_num == 0:
-    mock_smf_data = [mass_freq]
-    pickle.dump(mock_smf_data, open(pickle_out_smf, "wb"))
-else:
-    mock_smf_data_new = pickle.load(open(pickle_out_smf, "rb"))
-    mock_smf_data_new.append(mass_freq)
-    pickle.dump(mock_smf_data_new,open(pickle_out_smf,"wb"))
+# if iter_num == 0:
+#     mock_smf_data = [mass_freq]
+#     pickle.dump(mock_smf_data, open(pickle_out_smf, "wb"))
+# else:
+#     mock_smf_data_new = pickle.load(open(pickle_out_smf, "rb"))
+#     mock_smf_data_new.append(mass_freq)
+#     pickle.dump(mock_smf_data_new,open(pickle_out_smf,"wb"))
 
 
 ###############################################################################        
@@ -855,16 +885,16 @@ for nn in neigh_vals:
         zz_tot_min = [np.nanmin(zz_tot[kk]) for kk in xrange(len(zz_tot))]
         A[bin_str] = [zz_tot_max,zz_tot_min]     
 
-# pickle_out_rats = pickle_out
-# pickle_out_rats+=r"\ratio_bands.p"
+pickle_out_rats = pickle_out
+pickle_out_rats+=r"\ratio_bands.p"
 
-# if iter_num == 0:
-#     rat_band_data = [A]
-#     pickle.dump(rat_band_data, open(pickle_out_rats, "wb"))
-# else:
-#     rat_band_data_new = pickle.load(open(pickle_out_rats, "rb"))
-#     rat_band_data_new.append(A)
-#     pickle.dump(rat_band_data_new,open(pickle_out_rats,"wb"))
+if iter_num == 0:
+    rat_band_data = [A]
+    pickle.dump(rat_band_data, open(pickle_out_rats, "wb"))
+else:
+    rat_band_data_new = pickle.load(open(pickle_out_rats, "rb"))
+    rat_band_data_new.append(A)
+    pickle.dump(rat_band_data_new,open(pickle_out_rats,"wb"))
 
 
 
@@ -897,16 +927,16 @@ for nn in neigh_vals:
     yy_tot_min = [np.nanmin(yy_tot[kk]) for kk in xrange(len(yy_tot))]
     B[med_str] = [yy_tot_max,yy_tot_min]
 
-# pickle_out_meds = pickle_out
-# pickle_out_meds+=r"\med_bands.p"
+pickle_out_meds = pickle_out
+pickle_out_meds+=r"\med_bands.p"
 
-# if iter_num == 0:
-#     med_band_data = [B]
-#     pickle.dump(med_band_data, open(pickle_out_meds, "wb"))
-# else:
-#     med_band_data_new = pickle.load(open(pickle_out_meds, "rb"))
-#     med_band_data_new.append(B)
-#     pickle.dump(med_band_data_new,open(pickle_out_meds,"wb"))    
+if iter_num == 0:
+    med_band_data = [B]
+    pickle.dump(med_band_data, open(pickle_out_meds, "wb"))
+else:
+    med_band_data_new = pickle.load(open(pickle_out_meds, "rb"))
+    med_band_data_new.append(B)
+    pickle.dump(med_band_data_new,open(pickle_out_meds,"wb"))    
 
 
 global bins_curve_fit
@@ -916,22 +946,22 @@ bins_curve_fit = bins.copy()
 
 # In[28]:
 
-eco_path  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
-eco_path += r"\Catalogs\ECO_true"
-eco_cols  = np.array([0,1,2,4])
+# eco_path  = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_density"
+# eco_path += r"\Catalogs\ECO_true"
+# eco_cols  = np.array([0,1,2,4])
 
 
-# In[29]:
+# # In[29]:
 
-ECO_true = (Index(eco_path,'.txt'))
-names    = ['ra','dec','cz','logMstar']
-PD_eco   = pd.read_csv(ECO_true[0],sep="\s+", usecols=(eco_cols),header=None,                skiprows=1,names=names)
-eco_comp = PD_eco[PD_eco.logMstar >= 9.1]
+# ECO_true = (Index(eco_path,'.txt'))
+# names    = ['ra','dec','cz','logMstar']
+# PD_eco   = pd.read_csv(ECO_true[0],sep="\s+", usecols=(eco_cols),header=None,                skiprows=1,names=names)
+# eco_comp = PD_eco[PD_eco.logMstar >= 9.1]
 
-ra_eco   = (np.array(eco_comp)).T[0]
-dec_eco  = (np.array(eco_comp)).T[1] 
-cz_eco   = (np.array(eco_comp)).T[2] 
-mass_eco = (np.array(eco_comp)).T[3]
+# ra_eco   = (np.array(eco_comp)).T[0]
+# dec_eco  = (np.array(eco_comp)).T[1] 
+# cz_eco   = (np.array(eco_comp)).T[2] 
+# mass_eco = (np.array(eco_comp)).T[3]
 
 coords_eco        = sph_to_cart(ra_eco,dec_eco,cz_eco)
 eco_neighbor_tree = spatial.cKDTree(coords_eco)
@@ -953,12 +983,12 @@ eco_final_bins    = [[] for xx in xrange(len(eco_mass_dat))]
 for qq in range(len(eco_mass_dat)):
     bin_centers, eco_freq, eco_ratio_info[qq],eco_final_bins[qq] = plot_calcs(eco_mass_dat[qq],                                    bins,dlogM)
 
-pickle_out_eco_smf = pickle_out
-pickle_out_eco_smf+=r"\eco_smf.p"
+# pickle_out_eco_smf = pickle_out
+# pickle_out_eco_smf+=r"\eco_smf.p"
 
-if iter_num == 0:
-    eco_smf_data = [eco_freq]
-    pickle.dump(eco_smf_data, open(pickle_out_eco_smf, "wb"))
+# if iter_num == 0:
+#     eco_smf_data = [eco_freq]
+#     pickle.dump(eco_smf_data, open(pickle_out_eco_smf, "wb"))
 
 eco_medians   = [[] for xx in xrange(len(eco_mass_dat))]    
 eco_med_bins   = [[] for xx in xrange(len(eco_mass_dat))]    
@@ -984,27 +1014,26 @@ for jj in range(len(neigh_vals)):
               eco_hist_calcs(eco_mass_dat[jj],bins,dlogM)
 ###############################################################################            
 
-# pickle_out_eco = pickle_out
-# pickle_out_eco+=r"\eco_hists.p"
+pickle_out_eco = pickle_out
+pickle_out_eco+=r"\eco_hists.p"
 
-# if iter_num == 0:
-#     eco_bins_data = [eco_low,eco_high,eco_low_bins,eco_high_bins]
-#     pickle.dump(eco_bins_data, open(pickle_out_eco, "wb"))
-
-
-# pickle_out_eco_1 = pickle_out
-# pickle_out_eco_1+=r"\eco_data.p"
+if iter_num == 0:
+    eco_bins_data = [eco_low,eco_high,eco_low_bins,eco_high_bins]
+    pickle.dump(eco_bins_data, open(pickle_out_eco, "wb"))
 
 
-# if iter_num == 0:
-#     eco_band_data = [eco_low,eco_high,eco_ratio_info, eco_final_bins,eco_medians]
-#     pickle.dump(eco_band_data, open(pickle_out_eco_1, "wb"))
+pickle_out_eco_1 = pickle_out
+pickle_out_eco_1+=r"\eco_data.p"
 
 
-# else:
-#     eco_band_data_new = pickle.load(open(pickle_out_eco, "rb"))
-#     eco_band_data_new.append([])
-#     pickle.dump(eco_band_data_new,open(pickle_out_eco,"wb"))   
+if iter_num == 0:
+    eco_band_data = [eco_low,eco_high,eco_ratio_info, eco_final_bins,eco_medians]
+    pickle.dump(eco_band_data, open(pickle_out_eco_1, "wb"))
+
+else:
+    eco_band_data_new = pickle.load(open(pickle_out_eco, "rb"))
+    eco_band_data_new.append([])
+    pickle.dump(eco_band_data_new,open(pickle_out_eco,"wb"))   
 
 
 
@@ -1106,14 +1135,14 @@ for nn in nn_keys:
         hh_tot_min = [np.nanmin(hh_tot[kk]) for kk in xrange(len(hh_tot))]
         D[bin_str] = [hh_tot_max,hh_tot_min]        
 
-# pickle_out_hists = pickle_out
-# pickle_out_hists+=r"\hist_bands.p"
+pickle_out_hists = pickle_out
+pickle_out_hists+=r"\hist_bands.p"
 
-# if iter_num == 0:
-#     hist_band_data = [C,D]
-#     pickle.dump(hist_band_data, open(pickle_out_hists, "wb"))
-# else:
-#     hist_band_data_new = pickle.load(open(pickle_out_hists, "rb"))
-#     hist_band_data_new.append(C)
-#     hist_band_data_new.append(D)
-#     pickle.dump(hist_band_data_new,open(pickle_out_hists,"wb"))        
+if iter_num == 0:
+    hist_band_data = [C,D]
+    pickle.dump(hist_band_data, open(pickle_out_hists, "wb"))
+else:
+    hist_band_data_new = pickle.load(open(pickle_out_hists, "rb"))
+    hist_band_data_new.append(C)
+    hist_band_data_new.append(D)
+    pickle.dump(hist_band_data_new,open(pickle_out_hists,"wb"))        

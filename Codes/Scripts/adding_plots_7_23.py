@@ -21,12 +21,20 @@ from scipy import integrate,optimize,spatial
 
 from mpl_toolkits.mplot3d import Axes3D
 
+##poster size
+# class Vars(object):
+#     size_xlabel = 48
+#     size_ylabel = 48
+#     size_text   = 36
+#     size_tick   = 36
+#     size_legend = 36
+
 class Vars(object):
-    size_xlabel = 48
-    size_ylabel = 48
-    size_text   = 36
-    size_tick   = 36
-    size_legend = 36
+    size_xlabel = 22
+    size_ylabel = 22
+    size_text   = 28
+    size_tick   = 20
+    size_legend = 20   
 
 va = Vars()
 
@@ -222,7 +230,8 @@ def plot_calcs(mass,bins,dlogM):
     Parameters
     ----------
     mass: array-like
-        A 1D array with mass values, assumed to be in order
+        A 1D array with mass values, assumed to be in order based on the 
+        density of the environment
     bins: array=like
         A 1D array with the values which will be used as the bin edges
         by the histogram function
@@ -640,7 +649,7 @@ neigh_vals  = np.array([1,2,3,5,10,20])
 
 nn_arr_temp = [[] for uu in xrange(len(coords_test))]
 nn_arr      = [[] for xx in xrange(len(coords_test))]
-nn_arr_nn   = [[] for yy in xrange(len(neigh_vals))]
+# nn_arr_nn   = [[] for yy in xrange(len(neigh_vals))]
 nn_idx      = [[] for zz in xrange(len(coords_test))]
 
 for vv in range(len(coords_test)):
@@ -798,6 +807,11 @@ for vv in range(len(nn_mass_dist)):
         all_mock_mass_means[vv][neigh_vals[jj]] =\
          (mean_bin_mass(nn_mass_dist[vv],bins,(jj+1))) 
 
+##left off here
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
 
 # In[358]:
 
@@ -806,7 +820,31 @@ med_plot_arr = {}
 for ii in range(len(neigh_vals)):
     med_plot_arr[neigh_vals[ii]] = {}
     for jj in range(len(nn_mass_dist)):
-        med_plot_arr[neigh_vals[ii]][jj] = all_mock_meds[jj][neigh_vals[ii]]    
+        med_plot_arr[neigh_vals[ii]][jj] = all_mock_meds[jj][neigh_vals[ii]]  
+
+
+B = {}
+yy_num = len(med_plot_arr[neigh_vals[0]])
+
+for nn in neigh_vals:
+    for ii in range(yy_num):
+        med_str  = '{0}'.format(nn)
+        yy_arr   = med_plot_arr[nn][ii]
+        if len(yy_arr) == num_of_bins:
+            n_y_elem = len(yy_arr)
+        else:
+            while len(yy_arr) < num_of_bins:
+                yy_arr_list = list(yy_arr)
+                yy_arr_list.append(np.nan)
+                yy_arr = np.array(yy_arr_list)
+            n_y_elem = len(yy_arr)
+        if ii == 0:
+            yy_tot = np.zeros((n_y_elem,1))
+        yy_tot = np.insert(yy_tot,len(yy_tot.T),yy_arr,1)
+    yy_tot = np.array(np.delete(yy_tot,0,axis=1))
+    yy_tot_max = [np.nanmax(yy_tot[kk]) for kk in xrange(len(yy_tot))]
+    yy_tot_min = [np.nanmin(yy_tot[kk]) for kk in xrange(len(yy_tot))]
+    B[med_str] = [yy_tot_max,yy_tot_min]          
 
 # for ii in range(len(neigh_vals)):
 #     for jj in range(len(nn_mass_dist)):
@@ -893,19 +931,29 @@ eco_final_bins    = [[] for xx in xrange(len(eco_mass_dat))]
 
 ###############################################################################
 
-##3D ECO plot
+#3D ECO plot
 
-# fig = plt.figure()
-# ax = fig.add_subplot(111, projection='3d')
-# ax.scatter(coords_eco.T[0],coords_eco.T[1],coords_eco.T[2],color='deeppink',\
-#     s=1,marker='.')
-# ax.scatter(0,0,0,marker='*',s=200,color='darkorchid',\
-#     edgecolor='')
+fig = plt.figure(figsize=(12,12))
+ax = fig.add_subplot(111, projection='3d')
 # ax.set_ylabel('X (Mpc)',fontsize=va.size_text)
 # ax.set_xlabel('Z (Mpc)',fontsize=va.size_text)
 # ax.set_zlabel('Y (Mpc)',fontsize=va.size_text)
-# plt.tight_layout()
-# plt.show()
+ax.set_ylabel('X (Mpc)',fontsize=36,labelpad=20)
+ax.set_xlabel('Z (Mpc)',fontsize=36,labelpad=20)
+ax.set_zlabel('Y (Mpc)',fontsize=36,labelpad=20)
+for label in ax.get_xticklabels() + ax.get_yticklabels() + ax.get_zticklabels():
+    label.set_fontsize(20)
+ax.grid(True)
+ax.w_xaxis.set_pane_color((0.87, 0.87, 0.87, 0.87))
+ax.w_yaxis.set_pane_color((0.87, 0.87, 0.87, 0.87))
+ax.w_zaxis.set_pane_color((0.87, 0.87, 0.87, 0.87))
+ax.set_axis_bgcolor('slategray')
+ax.scatter(coords_eco.T[0],coords_eco.T[1],coords_eco.T[2],color='deeppink',\
+    s=1,marker='.')
+ax.scatter(0,0,0,marker='*',s=200,color='darkorchid',\
+    edgecolor='')
+plt.tight_layout()
+plt.show()
 
 
 for qq in range(len(eco_mass_dat)):
@@ -1013,9 +1061,9 @@ ax.set_yscale('log')
 ax.set_xlim(9.1,11.8)
 ax.tick_params(axis='both', labelsize=va.size_tick)
 
-for ii in range(len(mass_freq)):
+# for ii in range(len(mass_freq)):
     # ax.plot(bin_centers,mass_freq[ii][0],color='silver')
-    ax.fill_between(bin_centers,max_lim,min_lim,color='silver',alpha=0.1)
+    # ax.fill_between(bin_centers,max_lim,min_lim,color='silver',alpha=0.1)
 ax.errorbar(bin_centers,eco_freq[0],yerr=eco_freq[1],color='deeppink',\
             linewidth=2,label='ECO')
 ax.legend(loc='best',fontsize=va.size_legend)
@@ -1636,14 +1684,24 @@ def chi_finder(bin_int,bin_edges,phi_star,alpha,logMstar,count_err):
  # chi_finder(eco_freq[0],bins,a[0],a[1],a[2],eco_freq[1]) working example    
 ###############################################################################
 chi_sq_mocks = [[] for ii in xrange(len(mass_freq))]
+alpha_mocks = [[] for ii in xrange(len(mass_freq))]
+logMstar_mocks = [[] for ii in xrange(len(mass_freq))]
 for ii in range(len(mass_freq)):
     bin_int_test = mass_freq[ii][0] 
     count_err_test = mass_freq[ii][1]
     opt_v_test, res_arr_test, perr_test = find_params(bin_int_test,bins,
         count_err_test)
+    alpha_mocks[ii] = opt_v_test[1]
+    logMstar_mocks[ii] = res_arr_test[1]
     chi_sq_mocks[ii] = chi_finder(bin_int_test,bins,opt_v_test[0],
         opt_v_test[1],opt_v_test[2],count_err_test)
 ###############################################################################
+fig, ax = plt.subplots()
+ax.set_yscale('log')
+# ax.errorbar(1,res_arr_test[1],yerr=np.log10(perr_test[2]),marker='o')
+ax.errorbar(1,opt_v_test[2],yerr=perr_test[2],marker='x')
+plt.show()
+
 ###############################################################################
 ###############################################################################
 ###############################################################################

@@ -208,7 +208,7 @@ def calc_dens_nn(n_val,r_val):
         to the Nth nearest neighbor.
     """
     dens = np.array([(3.*(n_val+1)/(4.*np.pi*r_val[hh]**3))\
-        for hh in range(len(r_val))])
+        for hh in xrange(len(r_val))])
 
     return dens
 
@@ -301,7 +301,7 @@ def plot_calcs(mass,bins,dlogM):
     mass_freq_list[1]  = np.sqrt(mass_counts)/float(len(mass))/dlogM
     mass_freq          = np.array(mass_freq_list)
 
-    ratio_dict_list    = [[] for xx in range(2)]
+    ratio_dict_list    = [[] for xx in xrange(2)]
     ratio_dict_list[0] = ratio_dict
     ratio_dict_list[1] = yerr
     ratio_dict         = ratio_dict_list
@@ -370,19 +370,19 @@ def bin_func(mass_dist,bins,kk,bootstrap=False):
     if bootstrap == True:
         dist_in_bin    = np.array([(mass_dist.T[kk][digitized==ii])\
                          for ii in bin_nums])
-        for vv in range(len(dist_in_bin)):
+        for vv in xrange(len(dist_in_bin)):
             if len(dist_in_bin[vv]) == 0:
 #                 dist_in_bin_list = list(dist_in_bin[vv])
 #                 dist_in_bin[vv] = np.zeros(len(dist_in_bin[0]))
                 dist_in_bin[vv] = np.nan
         low_err_test   = np.array([np.percentile(astropy.stats.bootstrap\
                          (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),16)\
-                                            for vv in range(len(dist_in_bin))])
+                                            for vv in xrange(len(dist_in_bin))])
         high_err_test  = np.array([np.percentile(astropy.stats.bootstrap\
                         (dist_in_bin[vv],bootnum=1000,bootfunc=np.median),84)\
-                                         for vv in range(len(dist_in_bin))])
+                                         for vv in xrange(len(dist_in_bin))])
 
-        med_list    = [[] for yy in range(3)]
+        med_list    = [[] for yy in xrange(3)]
         med_list[0] = medians
         med_list[1] = low_err_test
         med_list[2] = high_err_test
@@ -530,6 +530,10 @@ group_ID = eco_comp.group_ID
 Mr_eco   = eco_comp.Mr
 
 ###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
 ##Importing mock data!!!
 
 dirpath = r"C:\Users\Hannah\Desktop\Vanderbilt_REU\Stellar_mass_env_Density"
@@ -541,10 +545,10 @@ usecols  = (0,1,2,4,7,13,20,25)
 names    = ['ra','dec','cz','Halo_ID','halo_cent_sat','logMstar',
     'group_ID','group_cent_sat']
 
-PD = [[] for ii in range(len(ECO_cats))]
+PD = [[] for ii in xrange(len(ECO_cats))]
 
 ##creating a list of panda dataframes
-for ii in range(len(ECO_cats)):
+for ii in xrange(len(ECO_cats)):
     temp_PD = (pd.read_csv(ECO_cats[ii],sep="\s+", usecols= usecols,
         header=None, skiprows=2,names=names))
     PD[ii] = temp_PD
@@ -554,20 +558,28 @@ for ii in range(len(ECO_cats)):
 ##pass, but just in case), and max limit being that of ECO's most massive 
 ##galaxy
 
-PD_comp_1  = [(PD[ii][PD[ii].logMstar >= 9.1]) for ii in range(len(ECO_cats))]
+PD_comp_1  = [(PD[ii][PD[ii].logMstar >= 9.1]) for ii in xrange(len(ECO_cats))]
 PD_comp  = [(PD_comp_1[ii][PD_comp_1[ii].logMstar <=11.77]) 
-    for ii in range(len(ECO_cats))]
+    for ii in xrange(len(ECO_cats))]
 
 ##this resets the indices in the pd dataframe, meaning they will be 
 ##counted/indexed as if the galaxies with stellar masses outside of the limit 
 ##were never there
 [(PD_comp[ii].reset_index(drop=True,inplace=True)) 
-    for ii in range(len(ECO_cats))]
+    for ii in xrange(len(ECO_cats))]
 
 ##finding the min and max stellar mass galaxy of each catalog
+##not necessary for the abundance matched mocks, but useful to have in here
+##in case I have to run non ABD matched
+##I was thinking to use the maximum min value and the minumum max value, so 
+##that there would be no empty bins on either side, but I think it's a moot
+##point. Also, I already set a min and max on all the stellar masses.
+##There could possibly be one mock at some point that would have less than 
+##the normal number of bins, but my other code should make up for that
+
 min_max_mass_arr = []
 
-for ii in range(len(PD_comp)):
+for ii in xrange(len(PD_comp)):
     min_max_mass_arr.append(max(PD_comp[ii].logMstar))
     min_max_mass_arr.append(min(PD_comp[ii].logMstar))
 
@@ -586,18 +598,18 @@ for ii in bins:
         bins_list.remove(ii)
 bins = np.array(bins_list)
 
-ra_arr  = np.array([(PD_comp[ii].ra) for ii in range(len(PD_comp))])
-dec_arr  = np.array([(PD_comp[ii].dec) for ii in range(len(PD_comp))])
-cz_arr  = np.array([(PD_comp[ii].cz) for ii in range(len(PD_comp))])
-mass_arr  = np.array([(PD_comp[ii].logMstar) for ii in range(len(PD_comp))])
+ra_arr  = np.array([(PD_comp[ii].ra) for ii in xrange(len(PD_comp))])
+dec_arr  = np.array([(PD_comp[ii].dec) for ii in xrange(len(PD_comp))])
+cz_arr  = np.array([(PD_comp[ii].cz) for ii in xrange(len(PD_comp))])
+mass_arr  = np.array([(PD_comp[ii].logMstar) for ii in xrange(len(PD_comp))])
 
-halo_id_arr  = np.array([(PD_comp[ii].Halo_ID) for ii in range(len(PD_comp))])
+halo_id_arr  = np.array([(PD_comp[ii].Halo_ID) for ii in xrange(len(PD_comp))])
 halo_cent_sat_arr  = np.array([(PD_comp[ii].halo_cent_sat) 
-    for ii in range(len(PD_comp))])
+    for ii in xrange(len(PD_comp))])
 group_id_arr  = np.array([(PD_comp[ii].group_ID) 
-        for ii in range(len(PD_comp))])
+        for ii in xrange(len(PD_comp))])
 group_cent_sat_arr  = np.array([(PD_comp[ii].group_cent_sat) 
-    for ii in range(len(PD_comp))])
+    for ii in xrange(len(PD_comp))])
 
 ###############################################################################
 ###############################################################################
@@ -616,11 +628,52 @@ frac_vals    = np.array([2,4,10])
 ###############################################################################
 ###############################################################################
 ###############################################################################
+##Setting up ECO first
+
+coords_eco     = sph_to_cart(ra_eco,dec_eco,cz_eco,70)
+eco_neigh_tree = spatial.cKDTree(coords_eco)
+
+
+##neigh_vals index seems weird, but is so that if neighbor values change, the
+##code is dynamic
+##I believe the zero index is getting the distances to the neighbors
+##the 1st index gives the index of the neighbor
+eco_tree_dist  = np.array(eco_neigh_tree.query(coords_eco,neigh_vals[-1]+1)[0])
+##I'm not sure that I'll need this, but here's an array with the indices
+eco_neigh_idx  = np.array(eco_neigh_tree.query(coords_eco,neigh_vals[-1]+1)[1])
+
+##some explaining: eco_tree_dist is number of galaxies by number of neighbors
+##in shape. For example, 6000 by 21.  Using T makes it 21 by 6000. Then, using
+##[neigh_vals], I choose only the rows which are relevant. This makes it, for
+##example, 6 by 6000.  Then, I use T again, returning it to 6000 by 6.
+##Added in front of all of this is the log mass of each galaxy.  None of the 
+##orders changed, so it's fine. There are now len(neigh_vals)+1 columns
+eco_mass_dist  = np.column_stack((mass_eco,eco_tree_dist.T[neigh_vals].T))
+
+##the xrange is directing to which column the indices are to be sorted by
+##start with one, since the first column is mass
+##the total number of columns will be 1+len(neigh_vals)
+##sorted from smallest distance to largest
+##[::-1] reversed the indices, so those with the largest distances to their
+##nearest neighbors, and thus in the least dense areas, are listed first
+eco_idx = [np.argsort(eco_mass_dist.T[kk])[::-1] for kk in \
+    xrange(1,len(neigh_vals)+1)]    
+
+##should have all of the masses put in order depending on the environment of 
+##their galaxy (from least dense to most)
+eco_mass_dat = np.array([eco_mass_dist.T[0][eco_idx[kk]] for kk in \
+    xrange(len(neigh_vals))])
+
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
 ###############################################################################
 
 ##Changing the data from degrees and velocity to Cartesian system
 coords_test = np.array([sph_to_cart(ra_arr[vv],dec_arr[vv],cz_arr[vv],70)\
-                 for vv in range(len(ECO_cats))])
+                 for vv in xrange(len(ECO_cats))])
 
 ##Lists which will house information from the cKD tree
 nn_arr_temp = [[] for uu in xrange(len(coords_test))]
@@ -628,30 +681,31 @@ nn_arr      = [[] for xx in xrange(len(coords_test))]
 nn_idx      = [[] for zz in xrange(len(coords_test))]
 
 ##Creating the cKD tree for nearest neighbors, and having it find the distances
-##to the 21 nearest neighbors of each galaxy (the first is itself, hence 20+1)
 ##nn_arr houses the actual distances
 ##nn_idx houses the index of the galaxy which is the nth nearest neighbor
-for vv in range(num_of_mocks):
+for vv in xrange(num_of_mocks):
     nn_arr_temp[vv] = spatial.cKDTree(coords_test[vv])
-    nn_arr[vv] = np.array(nn_arr_temp[vv].query(coords_test[vv],21)[0])
-    nn_idx[vv] = np.array(nn_arr_temp[vv].query(coords_test[vv],21)[1])
+    nn_arr[vv] = np.array(nn_arr_temp[vv].query(coords_test[vv],\
+        neigh_vals[-1]+1)[0])
+    nn_idx[vv] = np.array(nn_arr_temp[vv].query(coords_test[vv],\
+        neigh_vals[-1]+1)[1])
 
 ##nn_specs is a list, with 8 elements, one for each mock
 ##each list has a series of numpy arrays, however many galaxies there are in
 ##that mock
 ##these arrays give the distances to the nearest neighbors of interest
 nn_specs       = [(np.array(nn_arr).T[ii].T[neigh_vals].T) for ii in\
-                     range(num_of_mocks)]
+                     xrange(num_of_mocks)]
 
 ##houses the same info as nn_specs, except now, the logMstar of each galaxy is
 ##the first term of the numpy array                     
 nn_mass_dist   = np.array([(np.column_stack((mass_arr[qq],nn_specs[qq])))\
-                     for qq in range(num_of_mocks)])
+                     for qq in xrange(num_of_mocks)])
 
 
 ##houses the indexes of the neighbors of interest for each galaxy
 nn_neigh_idx   = np.array([(np.array(nn_idx).T[ii].T[neigh_vals].T) \
-                    for ii in range(num_of_mocks)])    
+                    for ii in xrange(num_of_mocks)])    
 
 ###############################################################################
 
@@ -675,7 +729,7 @@ bin_cens_diff = {}
 # mass_freq  = [[] for xx in xrange(len(coords_test))]
 mass_freq = {}
 
-for ii in range(num_of_mocks):
+for ii in xrange(num_of_mocks):
     nn_dist_sorting[ii]    = {}
     dist_sort_mass[ii] = {}
 
@@ -686,9 +740,9 @@ for ii in range(num_of_mocks):
     ratio_info[ii] = {}
     bin_cens_diff[ii] = {}
 
-    for jj in range(len(neigh_vals)):        
+    for jj in xrange(len(neigh_vals)):        
         nn_dist_sorting[ii][(neigh_vals[jj])] = np.column_stack((nn_mass_dist[ii].T\
-            [0],np.array(nn_mass_dist[ii].T[range(1,len(neigh_vals)+1)[jj]])))        
+            [0],np.array(nn_mass_dist[ii].T[xrange(1,len(neigh_vals)+1)[jj]])))        
         ##smallest distance to largest (before reverse) Reversed, so then the
         ##largest distances are first, meaning the least dense environments
         ##gives indices of the sorted distances
@@ -739,17 +793,17 @@ for ii in range(num_of_mocks):
 
 all_mock_meds = {}
 
-for jj in range(len(nn_mass_dist[vv].T)-1):
+for jj in xrange(len(nn_mass_dist[vv].T)-1):
     all_mock_meds[neigh_vals[jj]] = {}
-    for vv in range(num_of_mocks):
+    for vv in xrange(num_of_mocks):
         all_mock_meds[neigh_vals[jj]][vv] = (bin_func(nn_mass_dist[vv],\
             bins,(jj+1)))
 
 ##this is for debugging; shows the number of medians listed for each nn for 
 ##each mock. if these are not all the same, there is a problem, and the
 ##extra code may, in fact, be needed        
-# for vv in range(8):
-#     for jj in range(6):
+# for vv in xrange(8):
+#     for jj in xrange(6):
 #         print len(all_mock_meds[neigh_vals[jj]][vv])
 
 
@@ -768,19 +822,19 @@ for jj in range(len(nn_mass_dist[vv].T)-1):
 band_for_medians = {}
 
 for nn in neigh_vals:
-    for ii in range(num_of_mocks):
+    for ii in xrange(num_of_mocks):
         med_str  = '{0}'.format(nn)
         num_of_meds   = all_mock_meds[nn][ii]
         if len(num_of_meds) == num_of_bins:
-            n_y_elem = len(num_of_meds)
+            n_elem = len(num_of_meds)
         else:
             while len(num_of_meds) < num_of_bins:
                 num_of_meds_list = list(num_of_meds)
                 num_of_meds_list.append(np.nan)
                 num_of_meds = np.array(num_of_meds_list)
-            n_y_elem = len(num_of_meds)
+            n_elem = len(num_of_meds)
         if ii == 0:
-            med_matrix = np.zeros((n_y_elem,1))
+            med_matrix = np.zeros((n_elem,1))
         med_matrix = np.insert(med_matrix,len(med_matrix.T),num_of_meds,1)
     med_matrix = np.array(np.delete(med_matrix,0,axis=1))
     med_matrix_max = np.array([np.nanmax(med_matrix[kk]) for kk in \
@@ -807,7 +861,7 @@ for ii in neigh_vals:
     plot_ratio_arr[ii] = {}
     for hh in frac_vals:
         plot_ratio_arr[ii][hh] = {}
-        for jj in range(num_of_mocks):
+        for jj in xrange(num_of_mocks):
             plot_ratio_arr[ii][hh][jj] = ratio_info[jj][ii][0][hh]
 
 band_for_ratios = {}
@@ -817,7 +871,7 @@ band_for_ratios = {}
 for nn in neigh_vals:
     for vv in frac_vals:
         bin_str    = '{0}_{1}'.format(nn,vv)
-        for cc in range(num_of_mocks):
+        for cc in xrange(num_of_mocks):
             num_of_rats = plot_ratio_arr[nn][vv][cc]
             if len(num_of_rats) == num_of_bins:
                 n_elem = len(num_of_rats)
@@ -839,7 +893,23 @@ for nn in neigh_vals:
             for kk in xrange(len(rat_matrix))]
         rat_matrix_min = [np.nanmin(rat_matrix[kk]) \
             for kk in xrange(len(rat_matrix))]
-        band_for_ratios[bin_str] = [rat_matrix_max,rat_matrix_min]                 
+        band_for_ratios[bin_str] = [rat_matrix_max,rat_matrix_min]     
+
+###New code for creating the band for the stellar mass function
+###I'm just assuming that each mock will have the same number of bins
+
+band_for_mass_func = {}
+
+for jj in xrange(num_of_mocks):
+    mfunc_arr = mass_freq[jj][0]
+    n_elem = len(mfunc_arr)
+    if jj == 0:
+        mfunc_matrix = np.zeros((n_elem,1)) 
+    mfunc_matrix = np.insert(mfunc_matrix,len(mfunc_matrix.T),mfunc_arr,1) 
+mfunc_matrix = np.array(np.delete(mfunc_matrix,0,axis=1))
+mfunc_mat_max = [np.max(mfunc_matrix[kk]) for kk in xrange(len(mfunc_matrix))]
+mfunc_mat_min = [np.min(mfunc_matrix[kk]) for kk in xrange(len(mfunc_matrix))]
+
 
 ###############################################################################
 
@@ -859,7 +929,7 @@ col_keys = np.sort(frac_dict.keys())
 ##each nn value; a boolean type array. This structure amazes me and I have a 
 ##difficult time imagining I came up with it myself...
 truth_vals = {}
-for ii in range(len(halo_id_arr)):
+for ii in xrange(len(halo_id_arr)):
     truth_vals[ii] = {}
     for jj in neigh_vals:
         halo_id_neigh = halo_id_arr[ii][nn_neigh_idx[ii].T[neigh_dict[jj]]].values
@@ -871,7 +941,7 @@ for ii in range(len(halo_id_arr)):
 ##I also have a hard time remembering developing this code... I imagine it was
 ##a messy process. But it worked out in the end!
 halo_frac = {}
-for ii in range(len(mass_arr)):
+for ii in xrange(len(mass_arr)):
     halo_frac[ii] = {}
     mass_binning = np.digitize(mass_arr[ii],bins)
     bins_to_use = list(np.unique(mass_binning))
@@ -896,7 +966,7 @@ for ii in range(len(mass_arr)):
 mean_mock_halo_frac = {}
 
 for ii in neigh_vals:
-    for jj in range(len(halo_frac)):
+    for jj in xrange(len(halo_frac)):
         bin_str = '{0}'.format(ii)
         oo_arr = halo_frac[jj][ii]
         n_o_elem = len(oo_arr)
@@ -921,7 +991,7 @@ axes_flat = axes.flatten()
 zz = int(0)
 while zz <=4:
     for jj in neigh_vals:
-        for kk in range(len(halo_frac)):
+        for kk in xrange(len(halo_frac)):
             if kk == 0:
                 value = True
             else:
